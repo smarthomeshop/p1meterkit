@@ -1,41 +1,36 @@
-# WaterFlowKit for Home Assistant
+# P1MeterKit for Home Assistant
 
-![WaterFlowKit Logo](images/WaterFlowkit-logo.png)
+![P1MeterKit Logo](images/P1MeterKit-logo.png)
 
-The WaterFlowKit is a versatile and comprehensive solution for monitoring water consumption on a specific waterline through Home Assistant. This kit provides real-time insights into your water usage and allows you to track trends over time. It's a perfect addition for those who want to become more aware of their water consumption and make informed decisions about water usage.
+With the P1MeterKit, you can gain real-time insights into both your electricity and gas consumption. This kit is fully integrated with Home Assistant and DSMR Reader. Measure your electricity and gas consumption down to the minute and then visualize it per hour, day, month, or year in Home Assistant. Additionally, the kit also measures the temperature and humidity in the room where the meter is installed.
 
-Check our website to view if your WaterFlow is compatible: https://WaterFlowkit.nl/en
+Check our website to see if your smart meter is compatible: https://P1MeterKit.nl/en
 
 ## Features
 
-- **Real-time Monitoring:** Get real-time data on your water consumption, including water flow rate and water temperature.
+- **Direct Power Monitoring:** Connect directly to smart meters to monitor power usage in real-time.
+- **Compatibility:** Specifically designed for smart meters (DSMR/SMR v4 and v5).
+- **Easy Installation:** Simple setup, just plug the RJ12 Cable in the kit and enjoy.
+- **Integrated Home Assistant Support:** Fully integrates with Home Assistant Energy Dashboard, providing seamless automation and monitoring.
 
-- **Data Visualization:** Visualize your water usage trends per hour, day, month, or year in liters, right within Home Assistant.
+## What's in the box:
 
-- **Environment Monitoring:** The kit also measures the temperature and humidity of the space where your water meter is located.
-
-- **Easy Installation:** The WaterFlowKit is designed for easy installation on your existing water supply line.
-
-- **Integration with Home Assistant:** Seamlessly integrate the kit with Home Assistant using the provided blueprints.
-
-## Contents of the Kit
-
-- WaterFlowKit
-- All necessary cables and WaterFlow sensor
-- Installation guide
+- P1Meter Kit: The main unit that directly connects to your DSMR P1 port for real-time monitoring of your energy consumption.
+- RJ12 Cable (2 meters long): Seamlessly connects your P1Meter Kit to your energy meter, ensuring an effortless setup. The 2-meter length provides ample flexibility for most installation scenarios.
+- Manual: A step-by-step guide that walks you through the quick and easy installation process.
 
 ## Installation
 
-Detailed installation instructions and Home Assistant integration guides can be found on our website [SmartHomeShop.io](https://smarthomeshop.io/en).
+For a complete installation guide and tips on integrating with Home Assistant, visit our website at [SmartHomeShop.io](https://smarthomeshop.io/en).
 
 ## Contributing
 
-Contributions are welcome! If you'd like to contribute to the project, please make a PR.
+We welcome contributions to improve the P1MeterKit. If you have suggestions or improvements, please submit a PR.
 
 ## Support
 
-For any questions or issues, please visit our [Discord community](https://smarthomeshop.io/discord) where you can find help and connect with other users.
+Join our [Discord community](https://smarthomeshop.io/discord) for support, to ask questions, and to connect with other smart home enthusiasts.
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is open-sourced under the [MIT License](LICENSE).
