@@ -16,7 +16,7 @@ Check our website to see if your smart meter is compatible: https://P1MeterKit.n
 ## What's in the box:
 
 - P1Meter Kit: The main unit that directly connects to your DSMR P1 port for real-time monitoring of your energy consumption.
-- RJ12 Cable (2 meters long): Seamlessly connects your P1Meter Kit to your energy meter, ensuring an effortless setup. The 2-meter length provides ample flexibility for most installation scenarios.
+- RJ12 Cable: Seamlessly connects your P1Meter Kit to your energy meter, ensuring an effortless setup. 
 - Manual: A step-by-step guide that walks you through the quick and easy installation process.
 
 ## Installation

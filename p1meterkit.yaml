@@ -2,7 +2,8 @@
 substitutions:
   device_name: p1meterkit
   friendly_name: P1MeterKit
-  p1meterkit_software_version: "2024.04"
+  p1meterkit_software_version: "2024.05"
+  p1meterkit_hardware_version: "V1"
 
 esphome:
   name: ${device_name}
@@ -99,6 +100,12 @@ dsmr:
 #DSMR part end
 
 sensor:
+  #Wifi signal
+  - platform: wifi_signal
+    name: "${friendly_name} WiFi Signal"
+    update_interval: 300s
+    id: sensor_wifi_signal
+  #DSMR Readings
   - platform: dsmr
     energy_delivered_tariff1:
       id: dsmr_electricity_delivered_1
@@ -170,7 +177,6 @@ sensor:
       id: dsmr_extra_device_delivered
       name: "Gas Consumed"
       state_class: total_increasing
-    
     # Belgium
     #gas_delivered_be:
     #  name: "Gas Delivered BE"
@@ -180,9 +186,6 @@ sensor:
     #  name: "Energy Delivered Lux"
     #energy_returned_lux:
     #  name: "Energy Returned Lux"
-  - platform: wifi_signal
-    name: " Wi-Fi Signal"
-    update_interval: 360s
   # Uptime Sensor
   #
   # The uptime sensor allows you to track the time the ESP has stayed up for in
@@ -226,12 +229,12 @@ sensor:
   - platform: hdc1080
     temperature:
       id: sensor_temperature
-      name: "Temperature"
+      name: "${friendly_name} Temperature"
       filters:
         offset: -5.5
     humidity:
       id: sensor_humidity
-      name: "Humidity"
+      name: "${friendly_name} Humidity"
       filters:
         offset: 12
     update_interval: 60s
@@ -239,19 +242,33 @@ sensor:
 text_sensor:
   - platform: dsmr
     identification:
-      name: "DSMR Identification"
+      name: "${friendly_name} DSMR Identification"
     p1_version:
-      name: "DSMR Version"
+      name: "${friendly_name} DSMR Version"
     timestamp:
       id: dsmr_timestamp
       internal: true
+  # WiFi info #
   - platform: wifi_info
     ip_address:
-      name: "IP Address"
+      name: "${friendly_name} IP address"
+      icon: "mdi:network-outline"
     ssid:
-      name: "Wi-Fi SSID"
+      name: "${friendly_name} Connected SSID"
     bssid:
-      name: "Wi-Fi BSSID"
+      name: "${friendly_name} Connected BSSID"
   - platform: version
-    name: "ESPHome Version"
-    hide_timestamp: true
+    id: text_sensor_version
+    name: "${friendly_name} ESPHome Version"
+  - platform: template
+    id: text_sensor_waterp1meterkit_version
+    name: "${friendly_name} Software Version"
+    update_interval: 5h
+    lambda: |-
+      return {"${p1meterkit_software_version}"};
+  - platform: template
+    id: text_sensor_waterp1meterkit_hardware_version
+    name: "${friendly_name} Hardware Version"
+    update_interval: 5h
+    lambda: |-
+      return {"${p1meterkit_hardware_version}"};
