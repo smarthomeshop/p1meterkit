@@ -2,7 +2,7 @@
 substitutions:
   device_name: p1meterkit
   friendly_name: P1MeterKit
-  p1meterkit_software_version: "2024.05"
+  p1meterkit_software_version: "1.1"
   p1meterkit_hardware_version: "V1"
 
 esphome:
@@ -23,14 +23,15 @@ logger:
 api:
 
 ota:
+  - platform: esphome
 
 dashboard_import:
   package_import_url: github://smarthomeshop/p1meterkit/p1meterkit.yaml@main
 
 wifi:
   # remove leading '#' and fill in your wifi details
-  # ssid: !secret wifi_ssid
-  # password: !secret wifi_password
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
 
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
