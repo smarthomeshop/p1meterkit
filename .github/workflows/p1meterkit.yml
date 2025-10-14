@@ -106,7 +106,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-wifi_password: "DUMMYPASS"
           printf 'wifi_ssid: "DUMMY"\nwifi_password: "DUMMYPASS"\n' > p1meterkit-v2/secrets.yaml
 
       - name: ESPHome build uitvoeren
