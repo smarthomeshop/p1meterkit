@@ -13,6 +13,13 @@ Check our website to see if your smart meter is compatible: https://P1MeterKit.n
 - **Easy Installation:** Simple setup, just plug the RJ12 Cable in the kit and enjoy.
 - **Integrated Home Assistant Support:** Fully integrates with Home Assistant Energy Dashboard, providing seamless automation and monitoring.
 
+## Firmware variants
+
+- **P1MeterKit v1 (ESP8266 / `p1meterkit-v1`):** targets the original hardware revision based on the ESP8266. This build remains available through the legacy package URL so existing installations keep working without changes.
+- **P1MeterKit v2 (ESP32-C3 / `p1meterkit-v2`):** optimized for the refreshed hardware featuring the ESP32-C3 and backed by automated firmware builds and version bumps via GitHub Actions.
+
+Always flash the firmware variant that matches your hardware. We recommend using v2 for all new projects, while v1 ensures long-term support for legacy kits already in the field.
+
 ## What's in the box:
 
 - P1Meter Kit: The main unit that directly connects to your DSMR P1 port for real-time monitoring of your energy consumption.
