@@ -2,17 +2,18 @@
 substitutions:
   device_name: p1meterkit
   friendly_name: P1MeterKit
-  p1meterkit_software_version: "1.1"
+  p1meterkit_software_version: "1.2"
   p1meterkit_hardware_version: "V1"
 
 esphome:
   name: ${device_name}
   friendly_name: ${friendly_name}
-  board: d1_mini
-  platform: ESP8266
   project:
     name: "smarthomeshop.p1meterkit"
     version: ${p1meterkit_software_version}
+
+esp8266:
+ board: d1_mini
 
 # Enable logging
 logger:
