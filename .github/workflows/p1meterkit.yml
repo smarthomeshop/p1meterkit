@@ -34,62 +34,64 @@ jobs:
 
           YAML_FILE="p1meterkit-v2/p1meterkit.yaml"
 
-          python - <<'PY'
-            import os
-            import re
-            from pathlib import Path
+          cat <<'PY' > /tmp/p1meterkit_version.py
+import os
+import re
+from pathlib import Path
 
-            path = Path("p1meterkit-v2/p1meterkit.yaml")
-            text = path.read_text()
-            match = re.search(r'p1meterkit_software_version:\s*"([^"]+)"', text)
-            if not match:
-                raise SystemExit("Kon huidige versie niet vinden in p1meterkit-v2/p1meterkit.yaml")
-            current = match.group(1)
+path = Path("p1meterkit-v2/p1meterkit.yaml")
+text = path.read_text()
+match = re.search(r'p1meterkit_software_version:\s*"([^"]+)"', text)
+if not match:
+    raise SystemExit("Kon huidige versie niet vinden in p1meterkit-v2/p1meterkit.yaml")
+current = match.group(1)
 
-            event_name = os.getenv("GITHUB_EVENT_NAME", "")
-            ref = os.getenv("GITHUB_REF", "")
-            ref_type = os.getenv("GITHUB_REF_TYPE", "")
-            ref_name = os.getenv("GITHUB_REF_NAME", "")
-            sha = os.getenv("GITHUB_SHA", "")[:7]
+event_name = os.getenv("GITHUB_EVENT_NAME", "")
+ref = os.getenv("GITHUB_REF", "")
+ref_type = os.getenv("GITHUB_REF_TYPE", "")
+ref_name = os.getenv("GITHUB_REF_NAME", "")
+sha = os.getenv("GITHUB_SHA", "")[:7]
 
-            new_version = current
-            version_changed = False
+new_version = current
+version_changed = False
 
-            if ref_type == "tag" and re.fullmatch(r"v\d+(?:\.\d+)*", ref_name or ""):
-                new_version = (ref_name or "")[1:]
-            elif event_name == "push" and ref == "refs/heads/main":
-                parts = current.split('.')
-                try:
-                    numbers = [int(part) for part in parts]
-                except ValueError:
-                    numbers = None
-                if numbers:
-                    numbers[-1] += 1
-                    new_version = '.'.join(str(n) for n in numbers)
-                else:
-                    new_version = current
-            else:
-                new_version = f"dev-{sha}"
+if ref_type == "tag" and re.fullmatch(r"v\d+(?:\.\d+)*", ref_name or ""):
+    new_version = (ref_name or "")[1:]
+elif event_name == "push" and ref == "refs/heads/main":
+    parts = current.split('.')
+    try:
+        numbers = [int(part) for part in parts]
+    except ValueError:
+        numbers = None
+    if numbers:
+        numbers[-1] += 1
+        new_version = '.'.join(str(n) for n in numbers)
+    else:
+        new_version = current
+else:
+    new_version = f"dev-{sha}"
 
-            if new_version != current:
-                version_changed = True
+if new_version != current:
+    version_changed = True
 
-            pattern_version = re.compile(r'(p1meterkit_software_version:\s*)"[^"]+"')
-            pattern_project = re.compile(
-                r'(project:\s*\n\s*name:\s*"smarthomeshop\.p1meterkit"\s*\n\s*version:\s*)"[^"]+"'
-            )
+pattern_version = re.compile(r'(p1meterkit_software_version:\s*)"[^"]+"')
+pattern_project = re.compile(
+    r'(project:\s*\n\s*name:\s*"smarthomeshop\.p1meterkit"\s*\n\s*version:\s*)"[^"]+"'
+)
 
-            updated = pattern_version.sub(rf"\1\"{new_version}\"", text)
-            updated = pattern_project.sub(rf"\1\"{new_version}\"", updated)
-            path.write_text(updated)
+updated = pattern_version.sub(rf"\1\"{new_version}\"", text)
+updated = pattern_project.sub(rf"\1\"{new_version}\"", updated)
+path.write_text(updated)
 
-            print(f"Huidige versie: {current}")
-            print(f"Nieuwe versie: {new_version}")
+print(f"Huidige versie: {current}")
+print(f"Nieuwe versie: {new_version}")
 
-            with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
-                fh.write(f"new_version={new_version}\n")
-                fh.write(f"version_changed={'true' if version_changed else 'false'}\n")
-          PY
+with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+    fh.write(f"new_version={new_version}\n")
+    fh.write(f"version_changed={'true' if version_changed else 'false'}\n")
+PY
+
+          python3 /tmp/p1meterkit_version.py
 
       - name: Commit versie bump
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.version.outputs.version_changed == 'true'
