@@ -19,8 +19,8 @@ esp32:
 
 logger:
   baud_rate: 115200  
-  level: DEBUG
-  hardware_uart: UART0
+  level: WARN
+  #hardware_uart: UART0
 
 api:
 ota:
@@ -39,6 +39,11 @@ wifi:
     password: ${device_name}
 
 captive_portal:
+
+esp32_improv:
+  authorizer: none
+
+improv_serial:
 
 web_server:
   port: 80
@@ -64,14 +69,6 @@ switch:
   - platform: restart
     id: switch_restart
     name: "${friendly_name} Restart"
-
-time:
-  - platform: homeassistant
-    id: time_homeassistant
-    on_time_sync:
-      - component.update: sensor_uptime_timestamp
-  - platform: sntp
-    id: time_sntp
 
 # I2C (HDC1080)
 i2c:

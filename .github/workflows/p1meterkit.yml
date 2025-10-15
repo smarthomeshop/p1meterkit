@@ -16,92 +16,79 @@ permissions:
 
 jobs:
   build:
-    name: Build firmware
+    name: Build P1MeterKit firmware
     runs-on: ubuntu-latest
     outputs:
-      project_version: ${{ steps.version.outputs.new_version }}
-      firmware_name: ${{ steps.esphome_build.outputs.name }}
+      firmware_name: ${{ steps.esphome-build.outputs.name }}
+      project_version: ${{ steps.prepare.outputs.project_version }}
     steps:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Determine firmware version
-        id: version
+      - name: Prepare version metadata
+        id: prepare
         shell: bash
         run: |
           set -euo pipefail
 
           YAML_FILE="p1meterkit-v2/p1meterkit.yaml"
 
-          cat <<'PY' > /tmp/p1meterkit_version.py
-import os
-import re
-from pathlib import Path
+          python3 <<'PY'
+          import os
+          import re
+          from pathlib import Path
 
-path = Path("p1meterkit-v2/p1meterkit.yaml")
-text = path.read_text()
-match = re.search(r'p1meterkit_software_version:\s*"([^"]+)"', text)
-if not match:
-    raise SystemExit("Kon huidige versie niet vinden in p1meterkit-v2/p1meterkit.yaml")
-current = match.group(1)
+          path = Path("p1meterkit-v2/p1meterkit.yaml")
+          text = path.read_text()
+          match = re.search(r'p1meterkit_software_version:\s*"([^"]+)"', text)
+          if not match:
+              raise SystemExit("Kon huidige versie niet vinden")
+          current_version = match.group(1)
 
-event_name = os.getenv("GITHUB_EVENT_NAME", "")
-ref = os.getenv("GITHUB_REF", "")
-ref_type = os.getenv("GITHUB_REF_TYPE", "")
-ref_name = os.getenv("GITHUB_REF_NAME", "")
-sha = os.getenv("GITHUB_SHA", "")[:7]
+          version = current_version
+          version_changed = False
 
-new_version = current
-version_changed = False
+          ref_type = os.getenv("GITHUB_REF_TYPE", "")
+          ref_name = os.getenv("GITHUB_REF_NAME", "")
+          event_name = os.getenv("GITHUB_EVENT_NAME", "")
+          sha = os.getenv("GITHUB_SHA", "")[:7]
 
-if ref_type == "tag" and re.fullmatch(r"v\d+(?:\.\d+)*", ref_name or ""):
-    new_version = (ref_name or "")[1:]
-elif event_name == "push" and ref == "refs/heads/main":
-    parts = current.split('.')
-    try:
-        numbers = [int(part) for part in parts]
-    except ValueError:
-        numbers = None
-    if numbers:
-        numbers[-1] += 1
-        new_version = '.'.join(str(n) for n in numbers)
-    else:
-        new_version = current
-else:
-    new_version = f"dev-{sha}"
+          if ref_type == "tag" and re.fullmatch(r"v\d+(?:\.\d+)*", ref_name or ""):
+              version = (ref_name or "")[1:]
+          elif event_name == "push" and os.getenv("GITHUB_REF") == "refs/heads/main":
+              parts = current_version.split('.')
+              try:
+                  numbers = [int(part) for part in parts]
+              except ValueError:
+                  numbers = None
+              if numbers:
+                  numbers[-1] += 1
+                  version = '.'.join(str(n) for n in numbers)
+                  version_changed = True
+          else:
+              version = f"dev-{sha}"
 
-if new_version != current:
-    version_changed = True
+          pattern_version = re.compile(r'(p1meterkit_software_version:\s*)"[^"]+"')
+          pattern_project = re.compile(r'(project:\s*\n\s*name:\s*"smarthomeshop\.p1meterkit"\s*\n\s*version:\s*)"[^"]+"')
+          updated = pattern_version.sub(rf"\1\"{version}\"", text)
+          updated = pattern_project.sub(rf"\1\"{version}\"", updated)
+          path.write_text(updated)
 
-pattern_version = re.compile(r'(p1meterkit_software_version:\s*)"[^"]+"')
-pattern_project = re.compile(
-    r'(project:\s*\n\s*name:\s*"smarthomeshop\.p1meterkit"\s*\n\s*version:\s*)"[^"]+"'
-)
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+              fh.write(f"project_version={version}\n")
+              fh.write(f"version_changed={'true' if version_changed else 'false'}\n")
+          PY
 
-updated = pattern_version.sub(rf"\1\"{new_version}\"", text)
-updated = pattern_project.sub(rf"\1\"{new_version}\"", updated)
-path.write_text(updated)
-
-print(f"Huidige versie: {current}")
-print(f"Nieuwe versie: {new_version}")
-
-with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
-    fh.write(f"new_version={new_version}\n")
-    fh.write(f"version_changed={'true' if version_changed else 'false'}\n")
-PY
-
-          python3 /tmp/p1meterkit_version.py
-
-      - name: Commit versie bump
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.version.outputs.version_changed == 'true'
+      - name: Commit version bump
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.prepare.outputs.version_changed == 'true'
         shell: bash
         run: |
           set -euo pipefail
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add p1meterkit-v2/p1meterkit.yaml
-          git commit -m "chore: bump firmware version to ${{ steps.version.outputs.new_version }}" || exit 0
+          git commit -m "chore: bump firmware version to ${{ steps.prepare.outputs.project_version }}" || exit 0
           git push || echo "Geen wijzigingen om te pushen"
 
       - name: Dummy secrets aanmaken
@@ -111,7 +98,7 @@ PY
           printf 'wifi_ssid: "DUMMY"\nwifi_password: "DUMMYPASS"\n' > p1meterkit-v2/secrets.yaml
 
       - name: ESPHome build uitvoeren
-        id: esphome_build
+        id: esphome-build
         uses: esphome/build-action@v6
         with:
           yaml-file: p1meterkit-v2/p1meterkit.yaml
@@ -121,13 +108,13 @@ PY
         run: |
           set -euo pipefail
           mkdir -p output/p1meterkit-v2
-          mv "${{ steps.esphome_build.outputs.name }}" output/p1meterkit-v2/
+          mv "${{ steps.esphome-build.outputs.name }}" output/p1meterkit-v2/
           rm -f p1meterkit-v2/secrets.yaml
 
       - name: Artefact uploaden
         uses: actions/upload-artifact@v4
         with:
-          name: p1meterkit-v2-${{ steps.version.outputs.new_version }}
+          name: p1meterkit-v2-${{ steps.prepare.outputs.project_version }}
           path: output
 
   publish:
