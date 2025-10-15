@@ -111,14 +111,14 @@ jobs:
           mv "${{ steps.esphome-build.outputs.name }}" output/p1meterkit-v2/
           rm -f p1meterkit-v2/secrets.yaml
 
-      - name: Artefact uploaden
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: p1meterkit-v2-${{ steps.prepare.outputs.project_version }}
           path: output
 
   publish:
-    name: Publiceer naar GitHub Pages
+    name: Publish to GitHub Pages
     runs-on: ubuntu-latest
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -130,7 +130,7 @@ jobs:
           name: p1meterkit-v2-${{ needs.build.outputs.project_version }}
           path: output
 
-      - name: Manifest voorbereiden
+      - name: Prepare manifest
         shell: bash
         run: |
           set -euo pipefail
