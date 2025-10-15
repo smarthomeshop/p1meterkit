@@ -145,8 +145,8 @@ jobs:
               --arg prefix "$PREFIX" \
               '(.name = "P1MeterKit")
                | (.version = $version)
-               | (.builds[].ota.path |= $prefix + .)
-               | (.builds[].parts[].path |= $prefix + .)' \
+               | if .builds then .builds |= map(if .ota then .ota.path = $prefix + .ota.path else . end) else . end
+               | if .builds then .builds |= map(if .parts then .parts |= map(.path = $prefix + .path) else . end) else . end' \
               "$MANIFEST" > "$MANIFEST.tmp"
             mv "$MANIFEST.tmp" "$MANIFEST"
             cp "$MANIFEST" "$PWD/output/p1meterkit-v2/manifest.json"
