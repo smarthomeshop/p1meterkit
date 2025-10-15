@@ -71,8 +71,8 @@ jobs:
 
           pattern_version = re.compile(r'(p1meterkit_software_version:\s*)"[^"]+"')
           pattern_project = re.compile(r'(project:\s*\n\s*name:\s*"smarthomeshop\.p1meterkit"\s*\n\s*version:\s*)"[^"]+"')
-          updated = pattern_version.sub(rf"\1\"{version}\"", text)
-          updated = pattern_project.sub(rf"\1\"{version}\"", updated)
+          updated = pattern_version.sub(r'\1"' + version + '"', text)
+          updated = pattern_project.sub(r'\1"' + version + '"', updated)
           path.write_text(updated)
 
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
