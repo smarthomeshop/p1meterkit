@@ -1,7 +1,5 @@
 # P1MeterKit V2 - Base Configuration
 # Core functionality shared between all firmware variants
-# V2 is ESP32-C3 based - WiFi support with Improv
-
 substitutions:
   # Product identification
   device_name: p1meterkit
