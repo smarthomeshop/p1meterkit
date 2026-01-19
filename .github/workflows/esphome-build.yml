@@ -1,0 +1,140 @@
+name: Build and Publish ESPHome firmware
+
+on:
+  workflow_call:
+    inputs:
+      files:
+        description: Comma-separated list of files to build
+        required: true
+        type: string
+      name:
+        description: Name of the firmware
+        required: false
+        type: string
+        default: P1MeterKit
+      clean:
+        description: Remove deleted files from the build
+        type: boolean
+        default: true
+      manifest_filename:
+        description: Filename of the manifest
+        required: false
+        type: string
+        default: manifest.json
+      esphome_version:
+        description: Version of ESPHome
+        type: string
+        default: latest
+      directory_name:
+        description: Name of the output folder
+        required: true
+        type: string
+      software_version:
+        description: Project version to inject
+        type: string
+        default: ''
+      base_path:
+        description: Path to base.yaml
+        required: true
+        type: string
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      files: ${{ steps.files-array.outputs.files }}
+    steps:
+      - id: files-array
+        run: |
+          files=$(echo "${{ inputs.files }}" | jq -Rcn 'inputs | . / ","')
+          echo "files=$files" >> $GITHUB_OUTPUT
+
+  build:
+    name: Build ESPHome binary for ${{ matrix.file }}
+    needs: [prepare]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        file: ${{ fromJson(needs.prepare.outputs.files) }}
+    outputs:
+      esphome-version: ${{ steps.esphome-build.outputs.esphome-version }}
+      project-version: ${{ steps.esphome-build.outputs.project-version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Inject version into YAML
+        run: |
+          if [[ -n "${{ inputs.software_version }}" ]]; then
+            VERSION="${{ inputs.software_version }}"
+          elif [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="dev-$(echo ${GITHUB_SHA} | cut -c1-7)"
+          fi
+          
+          # Update software_version in base.yaml
+          sed -i "s/^\(\s*software_version:\s*\)\"[^\"]*\"/\1\"${VERSION}\"/" \
+            ${{ inputs.base_path }}/base.yaml
+
+      - name: Create dummy secrets
+        run: |
+          DIR=$(dirname "${{ matrix.file }}")
+          printf 'wifi_ssid: "DUMMY"\nwifi_password: "DUMMYPASS"\n' > "$DIR/secrets.yaml"
+
+      - uses: esphome/build-action@v6
+        id: esphome-build
+        with:
+          yaml-file: ${{ matrix.file }}
+          version: ${{ inputs.esphome_version }}
+
+      - name: Collect outputs
+        run: |
+          mkdir output
+          mv "${{ steps.esphome-build.outputs.name }}" temp
+          mv temp "${{ inputs.directory_name }}"
+          mv "${{ inputs.directory_name }}" output/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.name }}
+          path: output
+
+  publish:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    name: Publish to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: [build]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: output
+          name: ${{ inputs.name }}
+
+      - name: Create manifest.json
+        run: |
+          jq -s '{
+            "name": "${{ inputs.name }}",
+            "version": "${{ needs.build.outputs.project-version }}",
+            "home_assistant_domain": "esphome",
+            "new_install_skip_erase": false,
+            "builds": .
+          }' output/${{ inputs.directory_name }}/manifest.json > output/${{ inputs.manifest_filename }}
+          
+          # Fix paths in manifest
+          jq --arg dir "${{ inputs.directory_name }}" '
+            .builds[].ota.path |= "\($dir)/\(.)" |
+            .builds[].parts[].path |= "\($dir)/\(.)"
+          ' output/${{ inputs.manifest_filename }} > output/manifest_temp.json
+          mv output/manifest_temp.json output/${{ inputs.manifest_filename }}
+
+      - name: Deploy to gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: output
+          clean: ${{ inputs.clean }}
+          force: false

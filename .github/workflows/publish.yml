@@ -1,0 +1,200 @@
+name: Build and Publish P1MeterKit firmware
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      force_all:
+        description: 'Force build all versions'
+        type: boolean
+        default: false
+  schedule:
+    # Rebuild monthly with latest ESPHome
+    # ESPHome releases ~15th of the month, we build on the 20th
+    - cron: '0 3 20 * *'
+  push:
+    branches:
+      - main
+    paths:
+      - 'p1meterkit-v1/**'
+      - 'p1meterkit-v2/**'
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  # ============================================
+  # Detect which versions changed
+  # ============================================
+  detect-changes:
+    name: Detect changed versions
+    runs-on: ubuntu-latest
+    outputs:
+      v1_changed: ${{ steps.changes.outputs.v1 }}
+      v2_changed: ${{ steps.changes.outputs.v2 }}
+      v1_version: ${{ steps.versions.outputs.v1_version }}
+      v2_version: ${{ steps.versions.outputs.v2_version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Check for changes in each version
+        id: changes
+        shell: bash
+        run: |
+          # Force all on workflow_dispatch or schedule
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.force_all }}" == "true" ]]; then
+            echo "v1=true" >> $GITHUB_OUTPUT
+            echo "v2=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            echo "Scheduled build - rebuilding all"
+            echo "v1=true" >> $GITHUB_OUTPUT
+            echo "v2=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            echo "Tag detected - building all"
+            echo "v1=true" >> $GITHUB_OUTPUT
+            echo "v2=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Initial commit detection
+          if [[ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]]; then
+            echo "Initial commit - building all"
+            echo "v1=true" >> $GITHUB_OUTPUT
+            echo "v2=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Detect changes per folder
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_SHA=${{ github.event.pull_request.base.sha }}
+            HEAD_SHA=${{ github.event.pull_request.head.sha }}
+          else
+            BASE_SHA=${{ github.event.before }}
+            HEAD_SHA=${{ github.sha }}
+          fi
+          
+          V1=$(git diff --name-only $BASE_SHA $HEAD_SHA | grep -q "^p1meterkit-v1/" && echo "true" || echo "false")
+          V2=$(git diff --name-only $BASE_SHA $HEAD_SHA | grep -q "^p1meterkit-v2/" && echo "true" || echo "false")
+          
+          echo "v1=$V1" >> $GITHUB_OUTPUT
+          echo "v2=$V2" >> $GITHUB_OUTPUT
+
+      - name: Get versions
+        id: versions
+        shell: bash
+        run: |
+          # Get current versions from base.yaml
+          V1_CURRENT=$(grep "software_version:" "p1meterkit-v1/base.yaml" | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/' || echo "1.0")
+          V2_CURRENT=$(grep "software_version:" "p1meterkit-v2/base.yaml" | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/' || echo "2.0")
+          
+          # On scheduled: keep version (rebuild only)
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            echo "v1_version=$V1_CURRENT" >> $GITHUB_OUTPUT
+            echo "v2_version=$V2_CURRENT" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # On tag: use tag version
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            TAG_VERSION="${GITHUB_REF_NAME#v}"
+            echo "v1_version=$TAG_VERSION" >> $GITHUB_OUTPUT
+            echo "v2_version=$TAG_VERSION" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Otherwise: increment minor version on changes
+          increment_version() {
+            local VERSION=$1
+            if [[ "$VERSION" =~ ^([0-9]+)\.([0-9]+) ]]; then
+              echo "${BASH_REMATCH[1]}.$((BASH_REMATCH[2] + 1))"
+            else
+              echo "$VERSION"
+            fi
+          }
+          
+          if [[ "${{ steps.changes.outputs.v1 }}" == "true" && "${{ github.event_name }}" == "push" ]]; then
+            echo "v1_version=$(increment_version $V1_CURRENT)" >> $GITHUB_OUTPUT
+          else
+            echo "v1_version=$V1_CURRENT" >> $GITHUB_OUTPUT
+          fi
+          
+          if [[ "${{ steps.changes.outputs.v2 }}" == "true" && "${{ github.event_name }}" == "push" ]]; then
+            echo "v2_version=$(increment_version $V2_CURRENT)" >> $GITHUB_OUTPUT
+          else
+            echo "v2_version=$V2_CURRENT" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit version updates
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          CHANGES_MADE=false
+          
+          # Update V1 version if changed
+          if [[ "${{ steps.changes.outputs.v1 }}" == "true" ]]; then
+            NEW_VERSION="${{ steps.versions.outputs.v1_version }}"
+            sed -i "s/^\(\s*software_version:\s*\)\"[^\"]*\"/\1\"${NEW_VERSION}\"/" p1meterkit-v1/base.yaml
+            git add p1meterkit-v1/base.yaml
+            CHANGES_MADE=true
+          fi
+          
+          # Update V2 version if changed
+          if [[ "${{ steps.changes.outputs.v2 }}" == "true" ]]; then
+            NEW_VERSION="${{ steps.versions.outputs.v2_version }}"
+            sed -i "s/^\(\s*software_version:\s*\)\"[^\"]*\"/\1\"${NEW_VERSION}\"/" p1meterkit-v2/base.yaml
+            git add p1meterkit-v2/base.yaml
+            CHANGES_MADE=true
+          fi
+          
+          if [[ "$CHANGES_MADE" == "true" ]]; then
+            git commit -m "chore: update versions V1=${{ steps.versions.outputs.v1_version }} V2=${{ steps.versions.outputs.v2_version }} [skip ci]" || echo "No changes to commit"
+            git push || echo "No changes to push"
+          fi
+
+  # ============================================
+  # Build V1
+  # ============================================
+  publish-v1:
+    name: Publish V1
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.v1_changed == 'true'
+    uses: ./.github/workflows/esphome-build.yml
+    with:
+      files: p1meterkit-v1/p1meterkit.yaml
+      name: P1MeterKit V1
+      manifest_filename: p1meterkit-v1-manifest.json
+      clean: false
+      esphome_version: latest
+      directory_name: p1meterkit-v1
+      software_version: ${{ needs.detect-changes.outputs.v1_version }}
+      base_path: p1meterkit-v1
+
+  # ============================================
+  # Build V2
+  # ============================================
+  publish-v2:
+    name: Publish V2
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.v2_changed == 'true'
+    uses: ./.github/workflows/esphome-build.yml
+    with:
+      files: p1meterkit-v2/p1meterkit.yaml
+      name: P1MeterKit V2
+      manifest_filename: p1meterkit-v2-manifest.json
+      clean: false
+      esphome_version: latest
+      directory_name: p1meterkit-v2
+      software_version: ${{ needs.detect-changes.outputs.v2_version }}
+      base_path: p1meterkit-v2

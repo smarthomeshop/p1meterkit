@@ -1,0 +1,241 @@
+# P1MeterKit V1 - Base Configuration
+# Core functionality shared between all firmware variants
+# V1 is ESP8266 based - WiFi support only
+
+substitutions:
+  # Product identification
+  device_name: p1meterkit
+  friendly_name: P1MeterKit
+  software_version: "1.0"
+  hardware_version: "V1"
+  
+  # OTA manifest URL
+  manifest_url: "https://smarthomeshop.github.io/p1meterkit/p1meterkit-v1-manifest.json"
+  
+  # Default values
+  default_network: "WiFi"
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  name_add_mac_suffix: true
+  project:
+    name: "smarthomeshop.p1meterkit"
+    version: ${software_version}
+
+esp8266:
+  board: d1_mini
+
+# === Core Components ===
+logger:
+  baud_rate: 0
+  level: DEBUG
+
+api:
+
+ota:
+  - platform: esphome
+
+web_server:
+  port: 80
+
+# === Status LED ===
+status_led:
+  pin: GPIO16
+
+# === LED Outputs ===
+output:
+  - platform: esp8266_pwm
+    id: output_led_green
+    pin: GPIO12
+
+light:
+  - platform: monochromatic
+    id: light_led_green
+    name: "${friendly_name} LED Green"
+    output: output_led_green
+
+# === Device Controls ===
+switch:
+  - platform: restart
+    id: switch_restart
+    name: "${friendly_name} Restart"
+
+button:
+  - platform: factory_reset
+    name: "${friendly_name} Factory Reset"
+    entity_category: config
+    disabled_by_default: true
+
+# === Time ===
+time:
+  - platform: homeassistant
+    id: time_homeassistant
+    on_time_sync:
+      - component.update: sensor_uptime_timestamp
+      
+  - platform: sntp
+    id: time_sntp
+
+# === I2C Bus ===
+i2c:
+  sda: GPIO4
+  scl: GPIO5
+  scan: true
+  frequency: 400kHz
+
+# === DSMR P1 Meter ===
+uart:
+  rx_pin:
+    number: GPIO13  # D7
+    inverted: true
+  baud_rate: 115200
+  rx_buffer_size: 1700
+  
+dsmr:
+  gas_mbus_id: 1
+  crc_check: false
+  request_pin: GPIO14  # D5
+  max_telegram_length: 1700
+
+# === Sensors ===
+sensor:
+  # Uptime (internal)
+  - platform: uptime
+    id: sensor_uptime
+
+  # Uptime Timestamp (sends once)
+  - platform: template
+    id: sensor_uptime_timestamp
+    name: "${friendly_name} Uptime"
+    device_class: "timestamp"
+    accuracy_decimals: 0
+    update_interval: never
+    lambda: |-
+      static float timestamp = (
+        id(time_homeassistant).utcnow().timestamp - id(sensor_uptime).state
+      );
+      return timestamp;
+
+  # HDC1080 Temperature & Humidity Sensor
+  - platform: hdc1080
+    temperature:
+      id: sensor_temperature
+      name: "${friendly_name} Temperature"
+      filters:
+        offset: -5.5
+    humidity:
+      id: sensor_humidity
+      name: "${friendly_name} Humidity"
+      filters:
+        offset: 12
+    update_interval: 60s
+
+  # === DSMR Readings ===
+  - platform: dsmr
+    energy_delivered_tariff1:
+      id: dsmr_electricity_delivered_1
+      name: "Energy Consumed Tariff 1"
+      state_class: total_increasing
+    energy_returned_tariff1:
+      id: dsmr_electricity_returned_1
+      name: "Energy Produced Tariff 1"
+      state_class: total_increasing
+    energy_delivered_tariff2:
+      id: dsmr_electricity_delivered_2
+      name: "Energy Consumed Tariff 2"
+      state_class: total_increasing
+    energy_returned_tariff2:
+      id: dsmr_electricity_returned_2
+      name: "Energy Produced Tariff 2"
+      state_class: total_increasing
+    power_delivered:
+      accuracy_decimals: 3
+      id: dsmr_electricity_currently_delivered
+      name: "Power Consumed"
+    power_returned:
+      accuracy_decimals: 3
+      id: dsmr_electricity_currently_returned
+      name: "Power Produced"
+    voltage_l1:
+      id: dsmr_phase_voltage_l1
+      name: "Voltage Phase 1"
+    voltage_l2:
+      id: dsmr_phase_voltage_l2
+      name: "Voltage Phase 2"
+    voltage_l3:
+      id: dsmr_phase_voltage_l3
+      name: "Voltage Phase 3"
+    current_l1:
+      id: dsmr_phase_power_current_l1
+      name: "Current Phase 1"
+    current_l2:
+      id: dsmr_phase_power_current_l2
+      name: "Current Phase 2"
+    current_l3:
+      id: dsmr_phase_power_current_l3
+      name: "Current Phase 3"
+    power_delivered_l1:
+      accuracy_decimals: 3
+      id: dsmr_phase_currently_delivered_l1
+      name: "Power Consumed Phase 1"
+    power_delivered_l2:
+      accuracy_decimals: 3
+      id: dsmr_phase_currently_delivered_l2
+      name: "Power Consumed Phase 2"
+    power_delivered_l3:
+      accuracy_decimals: 3
+      id: dsmr_phase_currently_delivered_l3
+      name: "Power Consumed Phase 3"
+    power_returned_l1:
+      accuracy_decimals: 3
+      id: dsmr_phase_currently_returned_l1
+      name: "Power Produced Phase 1"
+    power_returned_l2:
+      accuracy_decimals: 3
+      id: dsmr_phase_currently_returned_l2
+      name: "Power Produced Phase 2"
+    power_returned_l3:
+      accuracy_decimals: 3
+      id: dsmr_phase_currently_returned_l3
+      name: "Power Produced Phase 3"
+    gas_delivered:
+      id: dsmr_extra_device_delivered
+      name: "Gas Consumed"
+      state_class: total_increasing
+    # Belgium
+    #gas_delivered_be:
+    #  name: "Gas Delivered BE"
+    
+    # Luxembourg
+    #energy_delivered_lux:
+    #  name: "Energy Delivered Lux"
+    #energy_returned_lux:
+    #  name: "Energy Returned Lux"
+
+# === Text Sensors ===
+text_sensor:
+  - platform: dsmr
+    identification:
+      name: "${friendly_name} DSMR Identification"
+    p1_version:
+      name: "${friendly_name} DSMR Version"
+    timestamp:
+      id: dsmr_timestamp
+      internal: true
+
+  - platform: version
+    id: text_sensor_version
+    name: "${friendly_name} ESPHome Version"
+    
+  - platform: template
+    id: text_sensor_p1meterkit_version
+    name: "${friendly_name} Software Version"
+    update_interval: 5h
+    lambda: |-
+      return {"${software_version}"};
+      
+  - platform: template
+    name: "${friendly_name} Hardware Version"
+    lambda: 'return {"${hardware_version}"};'
+    update_interval: 5h
