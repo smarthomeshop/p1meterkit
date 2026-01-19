@@ -1,0 +1,13 @@
+{
+  "chipFamily": "ESP8266",
+  "ota": {
+    "path": "p1meterkit-esp8266.ota.bin",
+    "md5": "1febe13221984c5cfd610043ba651ef2"
+  },
+  "parts": [
+    {
+      "path": "p1meterkit-esp8266.factory.bin",
+      "offset": 0
+    }
+  ]
+}
