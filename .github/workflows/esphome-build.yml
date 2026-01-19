@@ -59,6 +59,7 @@ jobs:
     outputs:
       esphome-version: ${{ steps.esphome-build.outputs.esphome-version }}
       project-version: ${{ steps.esphome-build.outputs.project-version }}
+      build-name: ${{ steps.esphome-build.outputs.name }}
     steps:
       - uses: actions/checkout@v4
 
@@ -89,10 +90,9 @@ jobs:
 
       - name: Collect outputs
         run: |
-          mkdir output
-          mv "${{ steps.esphome-build.outputs.name }}" temp
-          mv temp "${{ inputs.directory_name }}"
-          mv "${{ inputs.directory_name }}" output/
+          mkdir -p output/${{ inputs.directory_name }}
+          # Move all build files to the target directory
+          mv "${{ steps.esphome-build.outputs.name }}"/* output/${{ inputs.directory_name }}/
 
       - uses: actions/upload-artifact@v4
         with:
@@ -114,22 +114,36 @@ jobs:
           path: output
           name: ${{ inputs.name }}
 
+      - name: Debug - List output structure
+        run: |
+          echo "=== Output structure ==="
+          find output -type f -name "*.json" || true
+          ls -la output/ || true
+          ls -la output/${{ inputs.directory_name }}/ || true
+
       - name: Create manifest.json
         run: |
-          jq -s '{
-            "name": "${{ inputs.name }}",
-            "version": "${{ needs.build.outputs.project-version }}",
-            "home_assistant_domain": "esphome",
-            "new_install_skip_erase": false,
-            "builds": .
-          }' output/${{ inputs.directory_name }}/manifest.json > output/${{ inputs.manifest_filename }}
-          
-          # Fix paths in manifest
-          jq --arg dir "${{ inputs.directory_name }}" '
-            .builds[].ota.path |= "\($dir)/\(.)" |
-            .builds[].parts[].path |= "\($dir)/\(.)"
-          ' output/${{ inputs.manifest_filename }} > output/manifest_temp.json
-          mv output/manifest_temp.json output/${{ inputs.manifest_filename }}
+          # Read the build manifest and create the final manifest
+          if [[ -f "output/${{ inputs.directory_name }}/manifest.json" ]]; then
+            jq -s '{
+              "name": "${{ inputs.name }}",
+              "version": "${{ needs.build.outputs.project-version }}",
+              "home_assistant_domain": "esphome",
+              "new_install_skip_erase": false,
+              "builds": .
+            }' output/${{ inputs.directory_name }}/manifest.json > output/${{ inputs.manifest_filename }}
+            
+            # Fix paths in manifest
+            jq --arg dir "${{ inputs.directory_name }}" '
+              .builds[].ota.path |= "\($dir)/\(.)" |
+              .builds[].parts[].path |= "\($dir)/\(.)"
+            ' output/${{ inputs.manifest_filename }} > output/manifest_temp.json
+            mv output/manifest_temp.json output/${{ inputs.manifest_filename }}
+          else
+            echo "ERROR: manifest.json not found in output/${{ inputs.directory_name }}/"
+            find output -type f
+            exit 1
+          fi
 
       - name: Deploy to gh-pages
         uses: JamesIves/github-pages-deploy-action@v4
