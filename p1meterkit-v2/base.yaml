@@ -4,7 +4,7 @@ substitutions:
   # Product identification
   device_name: p1meterkit
   friendly_name: P1MeterKit
-  software_version: "2.2"
+  software_version: "2.3"
   hardware_version: "V2"
   
   # OTA manifest URL
