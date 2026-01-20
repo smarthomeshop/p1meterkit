@@ -73,4 +73,6 @@ PRs and issues are welcome. Please keep changes modular and follow ESPHome best 
 
 ## License
 
-This project is released under the MIT License (see `LICENSE`).
+This project is released under the CC BY‑NC 4.0 license
+
+
