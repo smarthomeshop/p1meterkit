@@ -11,3 +11,4 @@ packages:
 
 dashboard_import:
   package_import_url: github://smarthomeshop/p1meterkit/p1meterkit-v2/p1meterkit.yaml@main
+  import_full_config: false

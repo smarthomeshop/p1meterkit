@@ -10,7 +10,6 @@ wifi:
   
   ap:
     ssid: ${device_name}
-    password: ${device_name}
 
 captive_portal:
 
@@ -39,6 +38,7 @@ text_sensor:
       id: wifi_ssid
       name: "${friendly_name} Connected SSID"
     bssid:
+      id: wifi_bssid
       name: "${friendly_name} Connected BSSID"
     mac_address:
       id: wifi_mac_address
