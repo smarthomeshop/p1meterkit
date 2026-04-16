@@ -68,10 +68,28 @@ Quick start guide: https://smarthomeshop.io/quick-start-p1meterkit
 
 ## Repository Layout
 
-- `p1meterkit-v1/` — ESPHome configurations for V1 (ESP8266)
-- `p1meterkit-v2/` — ESPHome configurations for V2 (ESP32-C3)
-- `.github/workflows/` — build and publish automation for firmware and manifests
-- `gh-pages` branch — public firmware files and manifests
+```text
+p1meterkit/
+├── p1meterkit-v1/          # V1 ESPHome configurations
+│   ├── base.yaml           # Shared configuration
+│   ├── p1meterkit.yaml     # Main WiFi firmware
+│   └── p1meterkit-cloud.yaml
+├── p1meterkit-v2/          # V2 ESPHome configurations
+│   ├── base.yaml
+│   ├── p1meterkit.yaml     # Main WiFi firmware
+│   └── p1meterkit-cloud.yaml
+├── .github/workflows/      # Build and release automation
+└── images/
+```
+
+## Firmware Downloads
+
+Pre-built firmware manifests are published on the `gh-pages` branch.
+
+- V1 WiFi: `p1meterkit-v1-manifest.json`
+- V1 WiFi Cloud: `p1meterkit-v1-cloud-manifest.json`
+- V2 WiFi: `p1meterkit-v2-manifest.json`
+- V2 WiFi Cloud: `p1meterkit-v2-cloud-manifest.json`
 
 ## Contributing
 
