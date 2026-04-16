@@ -19,6 +19,13 @@ P1MeterKit connects directly to the P1 port of a DSMR smart meter with an RJ12 c
 - WiFi onboarding with captive portal support
 - Optional cloud-sync firmware variants
 
+## Hardware Versions
+
+| Version | Chip | Connectivity | Description |
+|---------|------|--------------|-------------|
+| V1 | ESP8266 | WiFi | Original compact P1MeterKit hardware |
+| V2 | ESP32-C3 | WiFi | Updated hardware with Improv BLE and Improv Serial provisioning |
+
 ## Variants
 
 We publish firmware for two hardware revisions. Each customer-facing variant has its own YAML file and matching Web Tools manifest.
