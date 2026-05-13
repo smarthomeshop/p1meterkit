@@ -5,7 +5,7 @@ substitutions:
   # Product identification
   device_name: p1meterkit
   friendly_name: P1MeterKit
-  software_version: "3.0"
+  software_version: "3.1"
   hardware_version: "V3"
   cloud_enabled: "false"
 
