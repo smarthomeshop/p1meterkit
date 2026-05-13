@@ -7,9 +7,14 @@ This changelog starts on 2026-05-13. Earlier firmware versions existed before th
 ## [Unreleased]
 
 - Add customer-facing changes here before the next release is published.
+
+## [P1MeterKit V3 3.2] - 2026-05-13
+
+
 - P1MeterKit V3 now routes serial logging and Improv Serial over `UART0`, matching the WaterMeterKit ESP32-C6 provisioning setup used by the web flasher.
 - P1MeterKit V3 now uses the device name as both fallback hotspot SSID and password.
 - P1MeterKit V3 has been simplified to a single WiFi-only configuration file, matching the WaterMeterKit V3 package layout.
+
 
 ## [P1MeterKit V3 3.1] - 2026-05-13
 
