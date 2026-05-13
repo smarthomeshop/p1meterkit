@@ -5,81 +5,52 @@ on:
   workflow_dispatch:
     inputs:
       force_all:
-        description: 'Force build all versions'
+        description: "Force build all versions"
+        required: false
         type: boolean
         default: false
-      clean_gh_pages:
-        description: 'Clean gh-pages branch (remove old files)'
-        type: boolean
-        default: false
+  # Scheduled build: rebuild all firmware monthly with latest ESPHome.
+  # ESPHome releases typically land around the 15th, so we rebuild on the
+  # 20th to pick up the new release a few days later after initial fixes.
   schedule:
-    # Rebuild monthly with latest ESPHome
-    # ESPHome releases ~15th of the month, we build on the 20th
-    - cron: '0 3 20 * *'
+    - cron: "0 3 20 * *"
   push:
     branches:
       - main
     paths:
-      - 'p1meterkit-v1/**'
-      - 'p1meterkit-v2/**'
-      - '.github/workflows/**'
-    tags:
-      - 'v*'
+      - "CHANGELOG.md"
+      - ".github/workflows/**"
+      - "p1meterkit-v1/**"
+      - "p1meterkit-v2/**"
+      - "p1meterkit-v3/**"
 
 permissions:
   contents: write
 
 jobs:
-  # ============================================
-  # Detect which versions changed
-  # ============================================
-  detect-changes:
-    name: Detect changed versions
+  validate-changelog:
+    name: Validate changelog updates
     runs-on: ubuntu-latest
-    outputs:
-      v1_changed: ${{ steps.changes.outputs.v1 }}
-      v2_changed: ${{ steps.changes.outputs.v2 }}
-      v1_version: ${{ steps.versions.outputs.v1_version }}
-      v2_version: ${{ steps.versions.outputs.v2_version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          
-      - name: Check for changes in each version
-        id: changes
+
+      - name: Require changelog update for firmware changes
         shell: bash
         run: |
-          # Force all on workflow_dispatch or schedule
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "v1=true" >> $GITHUB_OUTPUT
-            echo "v2=true" >> $GITHUB_OUTPUT
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" != "pull_request" && "${{ github.event_name }}" != "push" ]]; then
+            echo "Event does not require changelog validation"
             exit 0
           fi
-          
-          if [[ "${{ github.event_name }}" == "schedule" ]]; then
-            echo "Scheduled build - rebuilding all"
-            echo "v1=true" >> $GITHUB_OUTPUT
-            echo "v2=true" >> $GITHUB_OUTPUT
+
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.actor }}" == "github-actions[bot]" ]]; then
+            echo "Skipping changelog validation for GitHub Actions version bump commit"
             exit 0
           fi
-          
-          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
-            echo "Tag detected - building all"
-            echo "v1=true" >> $GITHUB_OUTPUT
-            echo "v2=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          
-          # Initial commit detection
-          if [[ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]]; then
-            echo "Initial commit - building all"
-            echo "v1=true" >> $GITHUB_OUTPUT
-            echo "v2=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          
-          # Detect changes per folder
+
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             BASE_SHA=${{ github.event.pull_request.base.sha }}
             HEAD_SHA=${{ github.event.pull_request.head.sha }}
@@ -87,199 +58,591 @@ jobs:
             BASE_SHA=${{ github.event.before }}
             HEAD_SHA=${{ github.sha }}
           fi
-          
-          # Check for workflow changes - rebuild all
-          if git diff --name-only $BASE_SHA $HEAD_SHA | grep -q "^\.github/workflows/"; then
-            echo "Workflow changed - rebuilding all"
-            echo "v1=true" >> $GITHUB_OUTPUT
-            echo "v2=true" >> $GITHUB_OUTPUT
+
+          if [[ "$BASE_SHA" == "0000000000000000000000000000000000000000" ]]; then
+            echo "First push detected; skipping changelog validation"
             exit 0
           fi
-          
-          V1=$(git diff --name-only $BASE_SHA $HEAD_SHA | grep -q "^p1meterkit-v1/" && echo "true" || echo "false")
-          V2=$(git diff --name-only $BASE_SHA $HEAD_SHA | grep -q "^p1meterkit-v2/" && echo "true" || echo "false")
-          
-          echo "v1=$V1" >> $GITHUB_OUTPUT
-          echo "v2=$V2" >> $GITHUB_OUTPUT
 
-      - name: Get versions
+          CHANGED_FILES=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          if ! echo "$CHANGED_FILES" | grep -Eq '^p1meterkit-v1/.*\.ya?ml$|^p1meterkit-v2/.*\.ya?ml$|^p1meterkit-v3/.*\.ya?ml$'; then
+            echo "No firmware YAML changes detected; changelog update not required"
+            exit 0
+          fi
+
+          if echo "$CHANGED_FILES" | grep -qx 'CHANGELOG.md'; then
+            echo "CHANGELOG.md updated"
+            exit 0
+          fi
+
+          echo "::error file=CHANGELOG.md::Firmware YAML changes require a customer-facing CHANGELOG.md update."
+          exit 1
+
+  detect-changes:
+    name: Detect changed versions
+    needs: [validate-changelog]
+    runs-on: ubuntu-latest
+    outputs:
+      v1_changed: ${{ steps.changes.outputs.v1 }}
+      v2_changed: ${{ steps.changes.outputs.v2 }}
+      v3_changed: ${{ steps.changes.outputs.v3 }}
+      v1_build: ${{ steps.changes.outputs.v1_build }}
+      v2_build: ${{ steps.changes.outputs.v2_build }}
+      v3_build: ${{ steps.changes.outputs.v3_build }}
+      v1_version: ${{ steps.versions.outputs.v1_version }}
+      v2_version: ${{ steps.versions.outputs.v2_version }}
+      v3_version: ${{ steps.versions.outputs.v3_version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check for changes in each version
+        id: changes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.force_all }}" == "true" ]]; then
+            echo "Force building all versions"
+            echo "v1=true" >> "$GITHUB_OUTPUT"
+            echo "v2=true" >> "$GITHUB_OUTPUT"
+            echo "v3=true" >> "$GITHUB_OUTPUT"
+            echo "v1_build=true" >> "$GITHUB_OUTPUT"
+            echo "v2_build=true" >> "$GITHUB_OUTPUT"
+            echo "v3_build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            echo "Scheduled build - rebuilding all versions with latest ESPHome"
+            echo "v1=true" >> "$GITHUB_OUTPUT"
+            echo "v2=true" >> "$GITHUB_OUTPUT"
+            echo "v3=true" >> "$GITHUB_OUTPUT"
+            echo "v1_build=true" >> "$GITHUB_OUTPUT"
+            echo "v2_build=true" >> "$GITHUB_OUTPUT"
+            echo "v3_build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            echo "Tag detected, building all versions"
+            echo "v1=true" >> "$GITHUB_OUTPUT"
+            echo "v2=true" >> "$GITHUB_OUTPUT"
+            echo "v3=true" >> "$GITHUB_OUTPUT"
+            echo "v1_build=true" >> "$GITHUB_OUTPUT"
+            echo "v2_build=true" >> "$GITHUB_OUTPUT"
+            echo "v3_build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_SHA=${{ github.event.pull_request.base.sha }}
+            HEAD_SHA=${{ github.event.pull_request.head.sha }}
+          else
+            BASE_SHA=${{ github.event.before }}
+            HEAD_SHA=${{ github.sha }}
+          fi
+
+          if [[ "$BASE_SHA" == "0000000000000000000000000000000000000000" ]]; then
+            echo "First push detected, building all versions"
+            echo "v1=true" >> "$GITHUB_OUTPUT"
+            echo "v2=true" >> "$GITHUB_OUTPUT"
+            echo "v3=true" >> "$GITHUB_OUTPUT"
+            echo "v1_build=true" >> "$GITHUB_OUTPUT"
+            echo "v2_build=true" >> "$GITHUB_OUTPUT"
+            echo "v3_build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          CHANGED_FILES=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          V1_CHANGED=$(echo "$CHANGED_FILES" | grep -Eq "^p1meterkit-v1/.*\.ya?ml$" && echo "true" || echo "false")
+          V2_CHANGED=$(echo "$CHANGED_FILES" | grep -Eq "^p1meterkit-v2/.*\.ya?ml$" && echo "true" || echo "false")
+          V3_CHANGED=$(echo "$CHANGED_FILES" | grep -Eq "^p1meterkit-v3/.*\.ya?ml$" && echo "true" || echo "false")
+          WORKFLOW_CHANGED=$(echo "$CHANGED_FILES" | grep -q "^.github/workflows/" && echo "true" || echo "false")
+
+          if [[ "$WORKFLOW_CHANGED" == "true" ]]; then
+            echo "Workflow changes detected; rebuilding all variants while preserving real firmware change detection"
+          fi
+
+          echo "v1=$V1_CHANGED" >> "$GITHUB_OUTPUT"
+          echo "v2=$V2_CHANGED" >> "$GITHUB_OUTPUT"
+          echo "v3=$V3_CHANGED" >> "$GITHUB_OUTPUT"
+          if [[ "$WORKFLOW_CHANGED" == "true" ]]; then
+            echo "v1_build=true" >> "$GITHUB_OUTPUT"
+            echo "v2_build=true" >> "$GITHUB_OUTPUT"
+            echo "v3_build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "v1_build=$V1_CHANGED" >> "$GITHUB_OUTPUT"
+            echo "v2_build=$V2_CHANGED" >> "$GITHUB_OUTPUT"
+            echo "v3_build=$V3_CHANGED" >> "$GITHUB_OUTPUT"
+          fi
+          echo "V1 changed: $V1_CHANGED"
+          echo "V2 changed: $V2_CHANGED"
+          echo "V3 changed: $V3_CHANGED"
+
+      - name: Update version numbers for changed versions
         id: versions
         shell: bash
         run: |
-          V1_CURRENT=$(grep "software_version:" "p1meterkit-v1/base.yaml" | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/' || echo "1.0")
-          V2_CURRENT=$(grep "software_version:" "p1meterkit-v2/base.yaml" | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/' || echo "2.0")
-          
-          echo "v1_version=$V1_CURRENT" >> $GITHUB_OUTPUT
-          echo "v2_version=$V2_CURRENT" >> $GITHUB_OUTPUT
+          set -euo pipefail
 
-  # ============================================
-  # Build V1
-  # ============================================
+          IS_SCHEDULED="${{ github.event_name == 'schedule' }}"
+
+          update_version() {
+            local version_file=$1
+            local output_name=$2
+
+            if [[ ! -f "$version_file" ]]; then
+              echo "${output_name}=1.0" >> "$GITHUB_OUTPUT"
+              return
+            fi
+
+            current_version=$(grep "software_version:" "$version_file" | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/')
+            echo "Current version for $version_file: $current_version"
+
+            if [[ "$IS_SCHEDULED" == "true" ]]; then
+              echo "${output_name}=${current_version}" >> "$GITHUB_OUTPUT"
+              echo "Scheduled build - keeping version: $current_version"
+              return
+            fi
+
+            if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+              echo "${output_name}=${current_version}" >> "$GITHUB_OUTPUT"
+              echo "Tag build - keeping version: $current_version"
+              return
+            fi
+
+            if [[ "$current_version" =~ ^([0-9]+)\.([0-9]+)(.*)$ ]]; then
+              major="${BASH_REMATCH[1]}"
+              minor="${BASH_REMATCH[2]}"
+              suffix="${BASH_REMATCH[3]}"
+              new_minor=$((minor + 1))
+              new_version="${major}.${new_minor}${suffix}"
+            else
+              shortsha=$(echo "${GITHUB_SHA}" | cut -c1-7)
+              new_version="dev-${shortsha}"
+            fi
+
+            echo "${output_name}=${new_version}" >> "$GITHUB_OUTPUT"
+            echo "New version for $version_file: $new_version"
+          }
+
+          if [[ "${{ steps.changes.outputs.v1 }}" == "true" ]]; then
+            update_version "p1meterkit-v1/base.yaml" "v1_version"
+          else
+            v1_current=$(grep "software_version:" "p1meterkit-v1/base.yaml" 2>/dev/null | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/' || echo "1.0")
+            echo "v1_version=$v1_current" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [[ "${{ steps.changes.outputs.v2 }}" == "true" ]]; then
+            update_version "p1meterkit-v2/base.yaml" "v2_version"
+          else
+            v2_current=$(grep "software_version:" "p1meterkit-v2/base.yaml" 2>/dev/null | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/' || echo "1.0")
+            echo "v2_version=$v2_current" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [[ "${{ steps.changes.outputs.v3 }}" == "true" ]]; then
+            update_version "p1meterkit-v3/base.yaml" "v3_version"
+          else
+            v3_current=$(grep "software_version:" "p1meterkit-v3/base.yaml" 2>/dev/null | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/' || echo "1.0")
+            echo "v3_version=$v3_current" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit version updates and create tags
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          finalize_changelog() {
+            local unreleased_notes
+            local release_blocks
+            local release_date
+
+            unreleased_notes=$(mktemp)
+            release_blocks=$(mktemp)
+            release_date=$(TZ=Europe/Amsterdam date +%Y-%m-%d)
+
+            awk '
+              $0 == "## [Unreleased]" { found=1; next }
+              found && /^## \[/ { exit }
+              found { print }
+            ' CHANGELOG.md \
+              | sed '/^- Add customer-facing changes here before the next release is published\.$/d' \
+              > "$unreleased_notes"
+
+            if ! grep -q '[^[:space:]]' "$unreleased_notes"; then
+              echo "No unreleased changelog notes to finalize"
+              rm -f "$unreleased_notes" "$release_blocks"
+              return
+            fi
+
+            if [[ "${{ steps.changes.outputs.v1 }}" == "true" ]]; then
+              {
+                printf '## [P1MeterKit V1 %s] - %s\n\n' "${{ steps.versions.outputs.v1_version }}" "$release_date"
+                cat "$unreleased_notes"
+                printf '\n'
+              } >> "$release_blocks"
+            fi
+
+            if [[ "${{ steps.changes.outputs.v2 }}" == "true" ]]; then
+              {
+                printf '## [P1MeterKit V2 %s] - %s\n\n' "${{ steps.versions.outputs.v2_version }}" "$release_date"
+                cat "$unreleased_notes"
+                printf '\n'
+              } >> "$release_blocks"
+            fi
+
+            if [[ "${{ steps.changes.outputs.v3 }}" == "true" ]]; then
+              {
+                printf '## [P1MeterKit V3 %s] - %s\n\n' "${{ steps.versions.outputs.v3_version }}" "$release_date"
+                cat "$unreleased_notes"
+                printf '\n'
+              } >> "$release_blocks"
+            fi
+
+            awk -v blocks_file="$release_blocks" '
+              BEGIN { in_unreleased=0 }
+              $0 == "## [Unreleased]" {
+                print
+                print ""
+                print "- Add customer-facing changes here before the next release is published."
+                print ""
+                while ((getline line < blocks_file) > 0) {
+                  print line
+                }
+                in_unreleased=1
+                next
+              }
+              in_unreleased && /^## \[/ {
+                in_unreleased=0
+                print
+                next
+              }
+              in_unreleased { next }
+              { print }
+            ' CHANGELOG.md > CHANGELOG.md.tmp
+
+            mv CHANGELOG.md.tmp CHANGELOG.md
+            rm -f "$unreleased_notes" "$release_blocks"
+          }
+
+          create_tag() {
+            local tag_name=$1
+
+            if git rev-parse "$tag_name" >/dev/null 2>&1; then
+              echo "Tag $tag_name already exists, skipping"
+              return
+            fi
+
+            echo "Creating tag: $tag_name"
+            git tag -a "$tag_name" -m "Release $tag_name"
+            git push origin "$tag_name"
+          }
+
+          changes_made=false
+
+          if [[ "${{ steps.changes.outputs.v1 }}" == "true" ]]; then
+            sed -i "s/^\s*software_version: \".*\"/  software_version: \"${{ steps.versions.outputs.v1_version }}\"/" p1meterkit-v1/base.yaml
+            changes_made=true
+          fi
+
+          if [[ "${{ steps.changes.outputs.v2 }}" == "true" ]]; then
+            sed -i "s/^\s*software_version: \".*\"/  software_version: \"${{ steps.versions.outputs.v2_version }}\"/" p1meterkit-v2/base.yaml
+            changes_made=true
+          fi
+
+          if [[ "${{ steps.changes.outputs.v3 }}" == "true" ]]; then
+            sed -i "s/^\s*software_version: \".*\"/  software_version: \"${{ steps.versions.outputs.v3_version }}\"/" p1meterkit-v3/base.yaml
+            changes_made=true
+          fi
+
+          if [[ "$changes_made" == "true" ]]; then
+            finalize_changelog
+          fi
+
+          if [[ "$changes_made" == "true" ]] && ! git diff --quiet; then
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add CHANGELOG.md p1meterkit-v*/base.yaml
+
+            msg="chore: update versions"
+            [[ "${{ steps.changes.outputs.v1 }}" == "true" ]] && msg="$msg V1=${{ steps.versions.outputs.v1_version }}"
+            [[ "${{ steps.changes.outputs.v2 }}" == "true" ]] && msg="$msg V2=${{ steps.versions.outputs.v2_version }}"
+            [[ "${{ steps.changes.outputs.v3 }}" == "true" ]] && msg="$msg V3=${{ steps.versions.outputs.v3_version }}"
+            msg="$msg [skip ci]"
+
+            git commit -m "$msg" || exit 0
+            git push || echo "Nothing to push"
+
+            if [[ "${{ steps.changes.outputs.v1 }}" == "true" && ! "${{ steps.versions.outputs.v1_version }}" =~ ^dev- ]]; then
+              create_tag "p1meterkit-v1-${{ steps.versions.outputs.v1_version }}"
+            fi
+
+            if [[ "${{ steps.changes.outputs.v2 }}" == "true" && ! "${{ steps.versions.outputs.v2_version }}" =~ ^dev- ]]; then
+              create_tag "p1meterkit-v2-${{ steps.versions.outputs.v2_version }}"
+            fi
+
+            if [[ "${{ steps.changes.outputs.v3 }}" == "true" && ! "${{ steps.versions.outputs.v3_version }}" =~ ^dev- ]]; then
+              create_tag "p1meterkit-v3-${{ steps.versions.outputs.v3_version }}"
+            fi
+          fi
+
   build-v1:
-    name: Build V1
+    name: Build P1MeterKit V1
     needs: [detect-changes]
-    if: needs.detect-changes.outputs.v1_changed == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    if: needs.detect-changes.outputs.v1_build == 'true'
+    uses: ./.github/workflows/esphome-build.yml
+    with:
+      files: p1meterkit-v1/p1meterkit.yaml
+      name: P1MeterKit V1
+      clean: false
+      esphome_version: latest
+      directory_name: p1meterkit-v1
+      software_version: ${{ needs.detect-changes.outputs.v1_version }}
+      base_path: p1meterkit-v1
 
-      - name: Inject version into YAML
-        run: |
-          VERSION="${{ needs.detect-changes.outputs.v1_version }}"
-          sed -i "s/^\(\s*software_version:\s*\)\"[^\"]*\"/\1\"${VERSION}\"/" p1meterkit-v1/base.yaml
-
-      - name: Create dummy secrets
-        run: |
-          printf 'wifi_ssid: "DUMMY"\nwifi_password: "DUMMYPASS"\n' > p1meterkit-v1/secrets.yaml
-
-      - uses: esphome/build-action@v6
-        id: esphome-build
-        with:
-          yaml-file: p1meterkit-v1/p1meterkit.yaml
-          version: latest
-
-      - name: Collect outputs
-        run: |
-          mkdir -p output/p1meterkit-v1
-          mv "${{ steps.esphome-build.outputs.name }}"/* output/p1meterkit-v1/
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: p1meterkit-v1
-          path: output
-
-  # ============================================
-  # Build V2
-  # ============================================
   build-v2:
-    name: Build V2
+    name: Build P1MeterKit V2
     needs: [detect-changes]
-    if: needs.detect-changes.outputs.v2_changed == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    if: needs.detect-changes.outputs.v2_build == 'true'
+    uses: ./.github/workflows/esphome-build.yml
+    with:
+      files: p1meterkit-v2/p1meterkit.yaml
+      name: P1MeterKit V2
+      clean: false
+      esphome_version: latest
+      directory_name: p1meterkit-v2
+      software_version: ${{ needs.detect-changes.outputs.v2_version }}
+      base_path: p1meterkit-v2
 
-      - name: Inject version into YAML
-        run: |
-          VERSION="${{ needs.detect-changes.outputs.v2_version }}"
-          sed -i "s/^\(\s*software_version:\s*\)\"[^\"]*\"/\1\"${VERSION}\"/" p1meterkit-v2/base.yaml
+  build-v3:
+    name: Build P1MeterKit V3
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.v3_build == 'true'
+    uses: ./.github/workflows/esphome-build.yml
+    with:
+      files: p1meterkit-v3/p1meterkit.yaml
+      name: P1MeterKit V3
+      clean: false
+      esphome_version: latest
+      directory_name: p1meterkit-v3
+      software_version: ${{ needs.detect-changes.outputs.v3_version }}
+      base_path: p1meterkit-v3
 
-      - name: Create dummy secrets
-        run: |
-          printf 'wifi_ssid: "DUMMY"\nwifi_password: "DUMMYPASS"\n' > p1meterkit-v2/secrets.yaml
-
-      - uses: esphome/build-action@v6
-        id: esphome-build
-        with:
-          yaml-file: p1meterkit-v2/p1meterkit.yaml
-          version: latest
-
-      - name: Collect outputs
-        run: |
-          mkdir -p output/p1meterkit-v2
-          mv "${{ steps.esphome-build.outputs.name }}"/* output/p1meterkit-v2/
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: p1meterkit-v2
-          path: output
-
-  # ============================================
-  # Publish all to GitHub Pages
-  # ============================================
-  publish:
-    name: Publish to GitHub Pages
-    needs: [detect-changes, build-v1, build-v2]
+  publish-gh-pages:
+    name: Publish firmware to GitHub Pages
+    needs:
+      - detect-changes
+      - build-v1
+      - build-v2
+      - build-v3
     if: |
       always() &&
       github.event_name != 'pull_request' &&
       github.ref == 'refs/heads/main' &&
-      (needs.build-v1.result == 'success' || needs.build-v2.result == 'success')
+      (
+        needs.build-v1.result == 'success' ||
+        needs.build-v2.result == 'success' ||
+        needs.build-v3.result == 'success'
+      )
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Create output directory
         run: mkdir -p output
+
+      - name: Seed output from current gh-pages
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git fetch --depth=1 origin gh-pages
+            git worktree add --detach existing-pages FETCH_HEAD
+            rsync -a --exclude='.git' existing-pages/ output/
+            git worktree remove existing-pages --force
+          fi
+
+      - name: Remove stale V1 output
+        if: needs.build-v1.result == 'success'
+        run: |
+          rm -rf output/p1meterkit-v1
+          rm -f output/p1meterkit-v1-manifest.json
+
+      - name: Remove stale V2 output
+        if: needs.build-v2.result == 'success'
+        run: |
+          rm -rf output/p1meterkit-v2
+          rm -f output/p1meterkit-v2-manifest.json
+
+      - name: Remove stale V3 output
+        if: needs.build-v3.result == 'success'
+        run: |
+          rm -rf output/p1meterkit-v3
+          rm -f output/p1meterkit-v3-manifest.json
 
       - name: Download V1 artifact
         if: needs.build-v1.result == 'success'
         uses: actions/download-artifact@v4
         with:
-          name: p1meterkit-v1
+          name: P1MeterKit V1
           path: output
 
       - name: Download V2 artifact
         if: needs.build-v2.result == 'success'
         uses: actions/download-artifact@v4
         with:
-          name: p1meterkit-v2
+          name: P1MeterKit V2
           path: output
 
-      - name: Create V1 manifest
-        if: needs.build-v1.result == 'success'
-        run: |
-          VERSION="${{ needs.detect-changes.outputs.v1_version }}"
-          if [[ -f "output/p1meterkit-v1/manifest.json" ]]; then
-            jq --arg version "$VERSION" '{
-              "name": "P1MeterKit V1",
-              "version": $version,
-              "home_assistant_domain": "esphome",
-              "new_install_skip_erase": false,
-              "builds": [.]
-            } | .builds[0].ota.path = "p1meterkit-v1/" + .builds[0].ota.path | .builds[0].parts[].path = "p1meterkit-v1/" + .builds[0].parts[].path' \
-              output/p1meterkit-v1/manifest.json > output/p1meterkit-v1-manifest.json
-          fi
+      - name: Download V3 artifact
+        if: needs.build-v3.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: P1MeterKit V3
+          path: output
 
-      - name: Create V2 manifest
-        if: needs.build-v2.result == 'success'
+      - name: Create manifests
+        shell: bash
         run: |
-          VERSION="${{ needs.detect-changes.outputs.v2_version }}"
-          if [[ -f "output/p1meterkit-v2/manifest.json" ]]; then
-            jq --arg version "$VERSION" '{
-              "name": "P1MeterKit V2",
+          set -euo pipefail
+
+          create_manifest() {
+            local variant_dir=$1
+            local manifest_name=$2
+            local display_name=$3
+            local version=$4
+            local manifest_file="output/${variant_dir}/manifest.json"
+
+            if [[ ! -f "$manifest_file" ]]; then
+              echo "Skipping ${variant_dir}; manifest.json not found"
+              return
+            fi
+
+            jq --arg dir "$variant_dir" --arg name "$display_name" --arg version "$version" '{
+              "name": $name,
               "version": $version,
               "home_assistant_domain": "esphome",
               "new_install_skip_erase": false,
               "builds": [.]
-            } | .builds[0].ota.path = "p1meterkit-v2/" + .builds[0].ota.path | .builds[0].parts[].path = "p1meterkit-v2/" + .builds[0].parts[].path' \
-              output/p1meterkit-v2/manifest.json > output/p1meterkit-v2-manifest.json
-          fi
+            } |
+            .builds[0].ota.path = ($dir + "/" + .builds[0].ota.path) |
+            .builds[0].parts[].path = ($dir + "/" + .builds[0].parts[].path)' \
+              "$manifest_file" > "output/${manifest_name}"
+          }
+
+          create_manifest "p1meterkit-v1" "p1meterkit-v1-manifest.json" "P1MeterKit V1" "${{ needs.detect-changes.outputs.v1_version }}"
+          create_manifest "p1meterkit-v2" "p1meterkit-v2-manifest.json" "P1MeterKit V2" "${{ needs.detect-changes.outputs.v2_version }}"
+          create_manifest "p1meterkit-v3" "p1meterkit-v3-manifest.json" "P1MeterKit V3" "${{ needs.detect-changes.outputs.v3_version }}"
 
       - name: Create README for gh-pages
+        shell: bash
         run: |
-          cat > output/README.md << 'EOF'
+          cat > output/README.md <<'EOF'
           # P1MeterKit firmware – GitHub Pages branch (gh-pages)
 
-          This branch hosts the public firmware artifacts and manifests for P1MeterKit. It is served via GitHub Pages and is intended to be consumed by:
+          This branch hosts the public firmware artifacts and manifests for P1MeterKit.
+          It is served via GitHub Pages and is intended to be consumed by:
           - ESP Web Tools (browser-based flashing)
           - OTA update integrations (using the JSON manifest)
 
           ## Do not edit manually
-          Files in this branch are generated by the CI workflow in the default branch. Any manual changes will be overwritten on the next publish.
+          Files in this branch are generated by the CI workflow in the default branch.
+          Any manual changes will be overwritten on the next publish.
 
           ## Layout
-          - `p1meterkit-v1/` — Firmware binaries for V1 (ESP8266)
-          - `p1meterkit-v2/` — Firmware binaries for V2 (ESP32-C3)
-          - `p1meterkit-v1-manifest.json` — Aggregate manifest for V1
-          - `p1meterkit-v2-manifest.json` — Aggregate manifest for V2
-
-          ## OTA update manifest
-          The P1MeterKit V2 firmware consumes the manifest directly for OTA updates.
-
-          ## How this branch is updated
-          On pushes to the main branch, the CI pipeline builds all variants and deploys to this branch.
+          - `p1meterkit-v1/`
+          - `p1meterkit-v2/`
+          - `p1meterkit-v3/`
+          - `*-manifest.json` aggregate manifests for OTA and ESP Web Tools
           EOF
 
-      - name: Debug - List output structure
-        run: |
-          echo "=== Output structure ==="
-          find output -type f | head -50
+      - name: Ensure Pages metadata
+        run: touch output/.nojekyll
+
+      - name: Debug output structure
+        run: find output -maxdepth 3 -type f | sort
 
       - name: Deploy to gh-pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
           folder: output
-          clean: ${{ github.event.inputs.clean_gh_pages == 'true' }}
+          clean: true
           force: false
+          attempt-limit: 6
+
+  create-releases:
+    name: Create GitHub releases
+    needs: [detect-changes]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Create releases for changed hardware versions
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          create_release() {
+            local tag_name=$1
+            local title=$2
+            local heading="## [${title}]"
+
+            if gh release view "$tag_name" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              echo "Release $tag_name already exists, skipping"
+              return
+            fi
+
+            awk -v heading="$heading" '
+              $0 == heading { found=1; next }
+              found && /^## \[/ { exit }
+              found { print }
+            ' CHANGELOG.md > release-notes.txt
+
+            if [[ ! -s release-notes.txt ]]; then
+              awk '
+                $0 == "## [Unreleased]" { found=1; next }
+                found && /^## \[/ { exit }
+                found { print }
+              ' CHANGELOG.md > release-notes.txt
+            fi
+
+            if [[ ! -s release-notes.txt ]]; then
+              printf '%s\n\n%s\n' \
+                "Customer-facing firmware notes live in CHANGELOG.md." \
+                "Changelog: https://github.com/${GITHUB_REPOSITORY}/blob/main/CHANGELOG.md" \
+                > release-notes.txt
+            fi
+
+            gh release create "$tag_name" \
+              -R "$GITHUB_REPOSITORY" \
+              --verify-tag \
+              --title "$title" \
+              --notes-file release-notes.txt
+          }
+
+          if [[ "${{ needs.detect-changes.outputs.v1_changed }}" == "true" && ! "${{ needs.detect-changes.outputs.v1_version }}" =~ ^dev- ]]; then
+            create_release "p1meterkit-v1-${{ needs.detect-changes.outputs.v1_version }}" "P1MeterKit V1 ${{ needs.detect-changes.outputs.v1_version }}"
+          fi
+
+          if [[ "${{ needs.detect-changes.outputs.v2_changed }}" == "true" && ! "${{ needs.detect-changes.outputs.v2_version }}" =~ ^dev- ]]; then
+            create_release "p1meterkit-v2-${{ needs.detect-changes.outputs.v2_version }}" "P1MeterKit V2 ${{ needs.detect-changes.outputs.v2_version }}"
+          fi
+
+          if [[ "${{ needs.detect-changes.outputs.v3_changed }}" == "true" && ! "${{ needs.detect-changes.outputs.v3_version }}" =~ ^dev- ]]; then
+            create_release "p1meterkit-v3-${{ needs.detect-changes.outputs.v3_version }}" "P1MeterKit V3 ${{ needs.detect-changes.outputs.v3_version }}"
+          fi

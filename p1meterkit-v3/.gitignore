@@ -1,0 +1,3 @@
+# ESPHome local state and secrets
+/.esphome/
+/secrets.yaml

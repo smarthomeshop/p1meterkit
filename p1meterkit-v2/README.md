@@ -28,7 +28,7 @@ Hardware version V2 is based on the **ESP32-C3**.
 
 | Variant | Description |
 |---------|-------------|
-| **p1meterkit.yaml** | Standard WiFi firmware with Improv |
+| **p1meterkit.yaml** | Standard local WiFi firmware with Improv |
 
 ## Installation via ESPHome Dashboard
 
@@ -40,7 +40,7 @@ packages:
 ## Easy Setup
 
 V2 supports easy WiFi setup via:
-- **Captive Portal**: Connect to the hotspot and configure WiFi
+- **Captive Portal**: Connect to the `p1meterkit` hotspot and configure WiFi
 - **Improv BLE**: Configure via Bluetooth with the Home Assistant app
 - **Improv Serial**: Configure via USB connection
 

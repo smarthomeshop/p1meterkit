@@ -1,0 +1,13 @@
+# P1MeterKit V3 WiFi Configuration
+# ESP32-C6 based, local-only firmware without cloud or MQTT telemetry.
+
+substitutions:
+  default_network: "WiFi"
+
+packages:
+  base: !include base.yaml
+  wifi: !include wifi.yaml
+
+dashboard_import:
+  package_import_url: github://smarthomeshop/p1meterkit/p1meterkit-v3/p1meterkit.yaml@main
+  import_full_config: false
