@@ -7,13 +7,11 @@ substitutions:
   friendly_name: P1MeterKit
   software_version: "3.1"
   hardware_version: "V3"
-  cloud_enabled: "false"
 
   # OTA manifest URL
   manifest_url: "https://smarthomeshop.github.io/p1meterkit/p1meterkit-v3-manifest.json"
 
   # Default values
-  default_network: "WiFi"
   gas_mbus_id: "2"
 
   # ESP32-C6 pinout
@@ -37,13 +35,31 @@ esp32:
   variant: esp32c6
   framework:
     type: esp-idf
+  flash_size: 4MB
 
 # === Core Components ===
 logger:
   baud_rate: 115200
-  level: WARN
+  hardware_uart: UART0
 
 api:
+
+wifi:
+  # No WiFi credentials are embedded in the firmware.
+  # Users can onboard with:
+  # - Captive Portal via the fallback AP
+  # - Improv Serial over USB
+  # - Improv BLE
+  ap:
+    ssid: ${device_name}
+    password: ${device_name}
+
+captive_portal:
+
+esp32_improv:
+  authorizer: none
+
+improv_serial:
 
 ota:
   - platform: esphome
@@ -122,6 +138,12 @@ dsmr:
 
 # === Sensors ===
 sensor:
+  # WiFi signal strength
+  - platform: wifi_signal
+    id: sensor_wifi_signal
+    name: "${friendly_name} WiFi Signal"
+    update_interval: 300s
+
   # HDC1080 Temperature & Humidity Sensor
   - platform: hdc1080
     temperature:
@@ -239,3 +261,19 @@ text_sensor:
     name: "${friendly_name} Hardware Version"
     lambda: 'return {"${hardware_version}"};'
     update_interval: 5h
+
+  - platform: wifi_info
+    ip_address:
+      id: wifi_ip_address
+      name: "${friendly_name} IP Address"
+      icon: "mdi:network-outline"
+    ssid:
+      id: wifi_ssid
+      name: "${friendly_name} Connected SSID"
+    bssid:
+      id: wifi_bssid
+      name: "${friendly_name} Connected BSSID"
+    mac_address:
+      id: wifi_mac_address
+      name: "${friendly_name} MAC Address"
+      entity_category: diagnostic

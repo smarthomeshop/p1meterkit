@@ -42,7 +42,8 @@ packages:
 
 - Initial onboarding is handled through captive portal, Improv BLE, or Improv Serial.
 - HTTP OTA updates are exposed through the firmware update entity.
-- The fallback access point uses the device name as SSID.
+- Serial logging and Improv Serial use `UART0`, matching the ESP32-C6 USB-to-UART bridge used by the web flasher.
+- The fallback access point uses the device name as SSID and password.
 - This firmware is local-only and does not include SmartHomeShop cloud, MQTT telemetry, or HTTP registration.
 
 ## OTA Updates
