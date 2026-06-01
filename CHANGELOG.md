@@ -6,11 +6,27 @@ This changelog starts on 2026-05-13. Earlier firmware versions existed before th
 
 ## [Unreleased]
 
+- Add customer-facing changes here before the next release is published.
+
+## [P1MeterKit V1 1.4] - 2026-06-01
+
+
 - P1MeterKit V1 now enables 115200 baud serial live logging and Improv Serial WiFi provisioning over USB.
 - P1MeterKit V2 now routes serial live logging over `UART0`, matching the USB-UART provisioning path used by the web flasher.
 - P1MeterKit V2 now uses the device name as both fallback hotspot SSID and password.
 - P1MeterKit V1 and V2 now expose DSMR current average demand and WiFi MAC diagnostics.
 - P1MeterKit V1 and V2 now keep their hardware pinout in substitutions, matching the V3 configuration structure without changing the actual pins.
+
+
+## [P1MeterKit V2 2.4] - 2026-06-01
+
+
+- P1MeterKit V1 now enables 115200 baud serial live logging and Improv Serial WiFi provisioning over USB.
+- P1MeterKit V2 now routes serial live logging over `UART0`, matching the USB-UART provisioning path used by the web flasher.
+- P1MeterKit V2 now uses the device name as both fallback hotspot SSID and password.
+- P1MeterKit V1 and V2 now expose DSMR current average demand and WiFi MAC diagnostics.
+- P1MeterKit V1 and V2 now keep their hardware pinout in substitutions, matching the V3 configuration structure without changing the actual pins.
+
 
 ## [P1MeterKit V3 3.2] - 2026-05-13
 
