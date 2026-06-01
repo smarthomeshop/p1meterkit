@@ -6,9 +6,20 @@ substitutions:
   friendly_name: P1MeterKit
   software_version: "2.3"
   hardware_version: "V2"
+  cloud_enabled: "false"
+
+  gas_mbus_id: "1"
+
+  pin_status_led: GPIO10
+  pin_led_green: GPIO1
+  pin_i2c_sda: GPIO5
+  pin_i2c_scl: GPIO4
+  pin_dsmr_rx: GPIO3
+  pin_dsmr_request: GPIO0
   
   # OTA manifest URL
   manifest_url: "https://smarthomeshop.github.io/p1meterkit/p1meterkit-v2-manifest.json"
+  cloud_manifest_url: "https://smarthomeshop.github.io/p1meterkit/p1meterkit-v2-cloud-manifest.json"
   
   # Default values
   default_network: "WiFi"
@@ -30,7 +41,7 @@ esp32:
 # === Core Components ===
 logger:
   baud_rate: 115200
-  level: WARN
+  hardware_uart: UART0
 
 api:
 
@@ -57,13 +68,13 @@ update:
 
 # === Status LED ===
 status_led:
-  pin: GPIO10
+  pin: ${pin_status_led}
 
 # === LED Outputs ===
 output:
   - platform: ledc
     id: led_green_out
-    pin: GPIO1
+    pin: ${pin_led_green}
 
 light:
   - platform: monochromatic
@@ -85,8 +96,8 @@ button:
 
 # === I2C Bus ===
 i2c:
-  scl: GPIO4
-  sda: GPIO5
+  scl: ${pin_i2c_scl}
+  sda: ${pin_i2c_sda}
   scan: true
   frequency: 400kHz
 
@@ -94,7 +105,7 @@ i2c:
 uart:
   id: uart_dsmr
   rx_pin:
-    number: GPIO3
+    number: ${pin_dsmr_rx}
     inverted: true
   baud_rate: 115200
   data_bits: 8
@@ -104,9 +115,9 @@ uart:
 
 dsmr:
   uart_id: uart_dsmr
-  gas_mbus_id: 1
+  gas_mbus_id: ${gas_mbus_id}
   crc_check: false
-  request_pin: GPIO0
+  request_pin: ${pin_dsmr_request}
   max_telegram_length: 1700
 
 # === Sensors ===
@@ -197,6 +208,10 @@ sensor:
       id: dsmr_extra_device_delivered
       name: "Gas Consumed"
       state_class: total_increasing
+    active_energy_import_current_average_demand:
+      id: dsmr_active_energy_import_current_average_demand
+      name: "Current Average Demand"
+      disabled_by_default: true
 
 # === Text Sensors ===
 text_sensor:

@@ -40,9 +40,11 @@ packages:
 ## Easy Setup
 
 V2 supports easy WiFi setup via:
-- **Captive Portal**: Connect to the `p1meterkit` hotspot and configure WiFi
+- **Captive Portal**: Connect to the `p1meterkit` hotspot and use `p1meterkit` as password
 - **Improv BLE**: Configure via Bluetooth with the Home Assistant app
 - **Improv Serial**: Configure via USB connection
+
+Serial live logs use **UART0** at **115200 baud**, matching the USB-UART bridge used by the web flasher.
 
 ## OTA Updates
 

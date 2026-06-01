@@ -7,6 +7,16 @@ substitutions:
   friendly_name: P1MeterKit
   software_version: "1.3"
   hardware_version: "V1"
+  cloud_enabled: "false"
+
+  gas_mbus_id: "1"
+
+  pin_status_led: GPIO16
+  pin_led_green: GPIO12
+  pin_i2c_sda: GPIO4
+  pin_i2c_scl: GPIO5
+  pin_dsmr_rx: GPIO13
+  pin_dsmr_request: GPIO14
   
   # OTA manifest URL
   manifest_url: "https://smarthomeshop.github.io/p1meterkit/p1meterkit-v1-manifest.json"
@@ -27,8 +37,7 @@ esp8266:
 
 # === Core Components ===
 logger:
-  baud_rate: 0
-  level: DEBUG
+  baud_rate: 115200
 
 api:
 
@@ -41,13 +50,13 @@ web_server:
 
 # === Status LED ===
 status_led:
-  pin: GPIO16
+  pin: ${pin_status_led}
 
 # === LED Outputs ===
 output:
   - platform: esp8266_pwm
     id: output_led_green
-    pin: GPIO12
+    pin: ${pin_led_green}
 
 light:
   - platform: monochromatic
@@ -79,23 +88,23 @@ time:
 
 # === I2C Bus ===
 i2c:
-  sda: GPIO4
-  scl: GPIO5
+  sda: ${pin_i2c_sda}
+  scl: ${pin_i2c_scl}
   scan: true
   frequency: 400kHz
 
 # === DSMR P1 Meter ===
 uart:
   rx_pin:
-    number: GPIO13  # D7
+    number: ${pin_dsmr_rx}
     inverted: true
   baud_rate: 115200
   rx_buffer_size: 1700
   
 dsmr:
-  gas_mbus_id: 1
+  gas_mbus_id: ${gas_mbus_id}
   crc_check: false
-  request_pin: GPIO14  # D5
+  request_pin: ${pin_dsmr_request}
   max_telegram_length: 1700
 
 # === Sensors ===
@@ -203,6 +212,10 @@ sensor:
       id: dsmr_extra_device_delivered
       name: "Gas Consumed"
       state_class: total_increasing
+    active_energy_import_current_average_demand:
+      id: dsmr_active_energy_import_current_average_demand
+      name: "Current Average Demand"
+      disabled_by_default: true
     # Belgium
     #gas_delivered_be:
     #  name: "Gas Delivered BE"

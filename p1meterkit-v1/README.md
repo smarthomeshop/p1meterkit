@@ -41,7 +41,10 @@ packages:
 
 V1 supports WiFi setup via:
 - **Captive Portal**: Connect to the `p1meterkit` hotspot and configure WiFi
+- **Improv Serial**: Configure WiFi over USB from the web flasher
 - **ESPHome Dashboard**: Configure WiFi during adoption or source-based installation
+
+Serial live logs are available over USB at **115200 baud**.
 
 ## OTA Updates
 

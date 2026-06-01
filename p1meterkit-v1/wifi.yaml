@@ -12,6 +12,11 @@ wifi:
 
 captive_portal:
 
+# Improv Serial (for WiFi provisioning via USB)
+# Note: ESP8266 does not support BLE Improv.
+improv_serial:
+  next_url: "https://app.smarthomeshop.io/setup/welcome?device={{device_name}}&ip={{ip_address}}&cloud=${cloud_enabled}&hw=${hardware_version}"
+
 sensor:
   # WiFi signal strength
   - platform: wifi_signal
@@ -31,3 +36,7 @@ text_sensor:
       name: "${friendly_name} Connected SSID"
     bssid:
       name: "${friendly_name} Connected BSSID"
+    mac_address:
+      id: wifi_mac_address
+      name: "${friendly_name} MAC Address"
+      entity_category: diagnostic
