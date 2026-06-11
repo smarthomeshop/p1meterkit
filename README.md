@@ -11,6 +11,9 @@ Any manual changes will be overwritten on the next publish.
 
 ## Layout
 - `p1meterkit-v1/`
+- `p1meterkit-v1-cloud/`
 - `p1meterkit-v2/`
+- `p1meterkit-v2-cloud/`
 - `p1meterkit-v3/`
+- `p1meterkit-v3-cloud/`
 - `*-manifest.json` aggregate manifests for OTA and ESP Web Tools
