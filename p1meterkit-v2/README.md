@@ -29,6 +29,8 @@ Hardware version V2 is based on the **ESP32-C3**.
 | Variant | Description |
 |---------|-------------|
 | **p1meterkit.yaml** | Standard local WiFi firmware with Improv |
+| **p1meterkit-cloud.yaml** | WiFi firmware with SmartHomeShop cloud registration and telemetry sync |
+| **p1meterkit-mqtt-cloud.yaml** | Legacy import filename; uses the HTTP cloud telemetry module |
 
 ## Installation via ESPHome Dashboard
 
@@ -50,5 +52,6 @@ Serial live logs use **UART0** at **115200 baud**, matching the USB-UART bridge 
 
 Firmware updates are automatically made available via:
 - `https://smarthomeshop.github.io/p1meterkit/p1meterkit-v2-manifest.json`
+- `https://smarthomeshop.github.io/p1meterkit/p1meterkit-v2-cloud-manifest.json`
 
 Updates are directly available in Home Assistant when a new version is released.

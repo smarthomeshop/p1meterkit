@@ -1,0 +1,433 @@
+# P1MeterKit V2 - Optional Cloud Module
+# Include this package only in cloud firmware variants.
+
+json:
+
+substitutions:
+  cloud_enabled: "true"
+  cloud_api_url: "https://api.smarthomeshop.io"
+  cloud_api_version: "v1"
+  cloud_sync_interval_power: "10s"
+  cloud_sync_interval_totals: "5min"
+
+http_request:
+  useragent: p1meterkit-cloud-esphome
+  verify_ssl: false
+  timeout: 10s
+
+time:
+  - platform: sntp
+    id: sntp_cloud_time
+    timezone: "Europe/Amsterdam"
+    servers:
+      - "pool.ntp.org"
+      - "time.google.com"
+
+globals:
+  - id: cloud_device_token
+    type: std::string
+    restore_value: true
+    initial_value: '""'
+  - id: cloud_device_id
+    type: std::string
+    restore_value: true
+    initial_value: '""'
+  - id: cloud_is_registered
+    type: bool
+    restore_value: true
+    initial_value: "false"
+  - id: cloud_is_registering
+    type: bool
+    restore_value: false
+    initial_value: "false"
+  - id: cloud_last_sync_success
+    type: bool
+    restore_value: false
+    initial_value: "false"
+  - id: cloud_sync_failures
+    type: int
+    restore_value: false
+    initial_value: "0"
+
+  - id: power_delivered_sum
+    type: float
+    restore_value: false
+    initial_value: "0.0"
+  - id: power_returned_sum
+    type: float
+    restore_value: false
+    initial_value: "0.0"
+  - id: power_sample_count
+    type: int
+    restore_value: false
+    initial_value: "0"
+  - id: avg_power_delivered
+    type: float
+    restore_value: false
+    initial_value: "0.0"
+  - id: avg_power_returned
+    type: float
+    restore_value: false
+    initial_value: "0.0"
+
+  - id: prev_energy_t1
+    type: float
+    restore_value: false
+    initial_value: "0.0"
+  - id: prev_energy_t2
+    type: float
+    restore_value: false
+    initial_value: "0.0"
+  - id: prev_energy_ret_t1
+    type: float
+    restore_value: false
+    initial_value: "0.0"
+  - id: prev_energy_ret_t2
+    type: float
+    restore_value: false
+    initial_value: "0.0"
+  - id: prev_gas
+    type: float
+    restore_value: false
+    initial_value: "0.0"
+
+  - id: pending_power_data
+    type: bool
+    restore_value: false
+    initial_value: "false"
+  - id: pending_totals_data
+    type: bool
+    restore_value: false
+    initial_value: "false"
+
+button:
+  - platform: template
+    id: cloud_reset_button
+    name: "${friendly_name} Reset Cloud"
+    icon: "mdi:cloud-off"
+    entity_category: config
+    on_press:
+      - script.execute: cloud_reset
+
+binary_sensor:
+  - platform: template
+    id: cloud_connected
+    name: "${friendly_name} Cloud Connected"
+    icon: "mdi:cloud-check"
+    entity_category: diagnostic
+    lambda: |-
+      return id(cloud_is_registered) && id(cloud_last_sync_success);
+
+sensor:
+  - platform: template
+    id: cloud_sync_failure_count
+    name: "${friendly_name} Cloud Sync Failures"
+    entity_category: diagnostic
+    icon: "mdi:alert-circle"
+    accuracy_decimals: 0
+    lambda: "return id(cloud_sync_failures);"
+    update_interval: 60s
+
+text_sensor:
+  - platform: template
+    id: cloud_device_id_sensor
+    name: "${friendly_name} Cloud Device ID"
+    entity_category: diagnostic
+    icon: "mdi:cloud-outline"
+    lambda: |-
+      if (id(cloud_device_id).length() > 0) {
+        return id(cloud_device_id);
+      }
+      return {"Not registered"};
+    update_interval: 60s
+
+  - platform: template
+    id: cloud_status_text
+    name: "${friendly_name} Cloud Status"
+    entity_category: diagnostic
+    icon: "mdi:cloud-question"
+    lambda: |-
+      if (!id(cloud_is_registered)) {
+        return {"Registering..."};
+      }
+      if (id(cloud_device_token).length() == 0) {
+        return {"No token"};
+      }
+      if (id(cloud_sync_failures) > 10) {
+        return {"Error: Too many failures"};
+      }
+      if (id(cloud_last_sync_success)) {
+        return {"Connected"};
+      }
+      return {"Syncing..."};
+    update_interval: 15s
+
+script:
+  - id: cloud_register
+    mode: single
+    then:
+      - if:
+          condition:
+            lambda: "return id(cloud_is_registering);"
+          then:
+            - script.stop: cloud_register
+
+      - lambda: "id(cloud_is_registering) = true;"
+
+      - wait_until:
+          condition:
+            lambda: "return id(wifi_mac_address).has_state();"
+          timeout: 30s
+
+      - wait_until:
+          condition:
+            lambda: "return id(wifi_ip_address).has_state();"
+          timeout: 30s
+
+      - http_request.post:
+          url: "${cloud_api_url}/api/${cloud_api_version}/devices/register"
+          request_headers:
+            Content-Type: "application/json"
+            User-Agent: "P1MeterKit/${software_version}"
+            Accept: "application/json"
+          json: |-
+            root["mac_address"] = id(wifi_mac_address).state;
+            root["hardware_version"] = "${hardware_version}";
+            root["firmware_version"] = "${software_version}";
+            root["product"] = "p1meterkit";
+            root["local_ip"] = id(wifi_ip_address).state;
+          capture_response: true
+          max_response_buffer_size: 512
+          on_response:
+            then:
+              - lambda: |-
+                  id(cloud_is_registering) = false;
+                  if (response->status_code == 200 || response->status_code == 201) {
+                    json::parse_json(body, [](JsonObject root) -> bool {
+                      if (root["device_id"].is<const char*>() && root["token"].is<const char*>()) {
+                        id(cloud_device_id) = root["device_id"].as<std::string>();
+                        id(cloud_device_token) = root["token"].as<std::string>();
+                        id(cloud_is_registered) = true;
+                        id(cloud_sync_failures) = 0;
+                        return true;
+                      }
+                      return false;
+                    });
+                  } else {
+                    id(cloud_sync_failures)++;
+                  }
+          on_error:
+            then:
+              - lambda: |-
+                  id(cloud_sync_failures)++;
+                  id(cloud_is_registering) = false;
+
+  - id: cloud_collect_power_sample
+    mode: single
+    then:
+      - lambda: |-
+          if (id(dsmr_electricity_currently_delivered).has_state() &&
+              !isnan(id(dsmr_electricity_currently_delivered).state)) {
+            id(power_delivered_sum) += id(dsmr_electricity_currently_delivered).state;
+          }
+          if (id(dsmr_electricity_currently_returned).has_state() &&
+              !isnan(id(dsmr_electricity_currently_returned).state)) {
+            id(power_returned_sum) += id(dsmr_electricity_currently_returned).state;
+          }
+          id(power_sample_count)++;
+
+  - id: cloud_sync_power
+    mode: single
+    then:
+      - lambda: |-
+          if (id(power_sample_count) > 0) {
+            id(avg_power_delivered) = id(power_delivered_sum) / id(power_sample_count);
+            id(avg_power_returned) = id(power_returned_sum) / id(power_sample_count);
+            id(pending_power_data) = true;
+          }
+          id(power_delivered_sum) = 0.0;
+          id(power_returned_sum) = 0.0;
+          id(power_sample_count) = 0;
+      - script.execute: cloud_send_batch
+
+  - id: cloud_sync_totals
+    mode: single
+    then:
+      - lambda: |-
+          bool changed = false;
+          if (id(dsmr_electricity_delivered_1).has_state() && !isnan(id(dsmr_electricity_delivered_1).state)) {
+            if (abs(id(dsmr_electricity_delivered_1).state - id(prev_energy_t1)) > 0.001) {
+              id(prev_energy_t1) = id(dsmr_electricity_delivered_1).state;
+              changed = true;
+            }
+          }
+          if (id(dsmr_electricity_delivered_2).has_state() && !isnan(id(dsmr_electricity_delivered_2).state)) {
+            if (abs(id(dsmr_electricity_delivered_2).state - id(prev_energy_t2)) > 0.001) {
+              id(prev_energy_t2) = id(dsmr_electricity_delivered_2).state;
+              changed = true;
+            }
+          }
+          if (id(dsmr_electricity_returned_1).has_state() && !isnan(id(dsmr_electricity_returned_1).state)) {
+            if (abs(id(dsmr_electricity_returned_1).state - id(prev_energy_ret_t1)) > 0.001) {
+              id(prev_energy_ret_t1) = id(dsmr_electricity_returned_1).state;
+              changed = true;
+            }
+          }
+          if (id(dsmr_electricity_returned_2).has_state() && !isnan(id(dsmr_electricity_returned_2).state)) {
+            if (abs(id(dsmr_electricity_returned_2).state - id(prev_energy_ret_t2)) > 0.001) {
+              id(prev_energy_ret_t2) = id(dsmr_electricity_returned_2).state;
+              changed = true;
+            }
+          }
+          if (id(dsmr_extra_device_delivered).has_state() && !isnan(id(dsmr_extra_device_delivered).state)) {
+            if (abs(id(dsmr_extra_device_delivered).state - id(prev_gas)) > 0.001) {
+              id(prev_gas) = id(dsmr_extra_device_delivered).state;
+              changed = true;
+            }
+          }
+          if (changed) {
+            id(pending_totals_data) = true;
+          }
+      - script.execute: cloud_send_batch
+
+  - id: cloud_send_batch
+    mode: single
+    then:
+      - if:
+          condition:
+            lambda: "return !id(cloud_is_registered);"
+          then:
+            - script.execute: cloud_register
+            - script.stop: cloud_send_batch
+
+      - if:
+          condition:
+            lambda: "return id(cloud_device_token).length() == 0;"
+          then:
+            - lambda: "id(cloud_is_registered) = false;"
+            - script.execute: cloud_register
+            - script.stop: cloud_send_batch
+
+      - if:
+          condition:
+            lambda: "return !id(pending_power_data) && !id(pending_totals_data);"
+          then:
+            - script.stop: cloud_send_batch
+
+      - lambda: "id(cloud_last_sync_success) = false;"
+
+      - http_request.post:
+          url: "${cloud_api_url}/api/${cloud_api_version}/devices/ingest"
+          request_headers:
+            Content-Type: "application/json"
+            Authorization: !lambda |-
+              static std::string auth;
+              auth = "Bearer ";
+              auth += id(cloud_device_token);
+              return auth.c_str();
+            User-Agent: "P1MeterKit/${software_version}"
+            Accept: "application/json"
+          capture_response: true
+          max_response_buffer_size: 256
+          json: |-
+            root["device_id"] = id(cloud_device_id);
+            root["timestamp"] = id(sntp_cloud_time).now().timestamp;
+            root["has_power"] = true;
+            root["has_totals"] = id(pending_totals_data);
+
+            // Always include power to prevent totals-only rows from nulling UI power.
+            if (id(dsmr_electricity_currently_delivered).has_state() && !isnan(id(dsmr_electricity_currently_delivered).state)) {
+              root["power_delivered_kw"] = id(dsmr_electricity_currently_delivered).state;
+            } else {
+              root["power_delivered_kw"] = id(avg_power_delivered);
+            }
+            if (id(dsmr_electricity_currently_returned).has_state() && !isnan(id(dsmr_electricity_currently_returned).state)) {
+              root["power_returned_kw"] = id(dsmr_electricity_currently_returned).state;
+            } else {
+              root["power_returned_kw"] = id(avg_power_returned);
+            }
+            if (id(dsmr_phase_voltage_l1).has_state() && !isnan(id(dsmr_phase_voltage_l1).state)) root["voltage_l1"] = id(dsmr_phase_voltage_l1).state;
+            if (id(dsmr_phase_voltage_l2).has_state() && !isnan(id(dsmr_phase_voltage_l2).state)) root["voltage_l2"] = id(dsmr_phase_voltage_l2).state;
+            if (id(dsmr_phase_voltage_l3).has_state() && !isnan(id(dsmr_phase_voltage_l3).state)) root["voltage_l3"] = id(dsmr_phase_voltage_l3).state;
+            if (id(dsmr_phase_power_current_l1).has_state() && !isnan(id(dsmr_phase_power_current_l1).state)) root["current_l1"] = id(dsmr_phase_power_current_l1).state;
+            if (id(dsmr_phase_power_current_l2).has_state() && !isnan(id(dsmr_phase_power_current_l2).state)) root["current_l2"] = id(dsmr_phase_power_current_l2).state;
+            if (id(dsmr_phase_power_current_l3).has_state() && !isnan(id(dsmr_phase_power_current_l3).state)) root["current_l3"] = id(dsmr_phase_power_current_l3).state;
+
+            if (id(pending_totals_data)) {
+              if (id(dsmr_electricity_delivered_1).has_state() && !isnan(id(dsmr_electricity_delivered_1).state)) root["energy_delivered_t1_kwh"] = id(dsmr_electricity_delivered_1).state;
+              if (id(dsmr_electricity_delivered_2).has_state() && !isnan(id(dsmr_electricity_delivered_2).state)) root["energy_delivered_t2_kwh"] = id(dsmr_electricity_delivered_2).state;
+              if (id(dsmr_electricity_returned_1).has_state() && !isnan(id(dsmr_electricity_returned_1).state)) root["energy_returned_t1_kwh"] = id(dsmr_electricity_returned_1).state;
+              if (id(dsmr_electricity_returned_2).has_state() && !isnan(id(dsmr_electricity_returned_2).state)) root["energy_returned_t2_kwh"] = id(dsmr_electricity_returned_2).state;
+              if (id(dsmr_extra_device_delivered).has_state() && !isnan(id(dsmr_extra_device_delivered).state)) root["gas_delivered_m3"] = id(dsmr_extra_device_delivered).state;
+              if (id(dsmr_active_energy_import_current_average_demand).has_state() && !isnan(id(dsmr_active_energy_import_current_average_demand).state)) root["current_average_demand_kw"] = id(dsmr_active_energy_import_current_average_demand).state;
+            }
+
+            if (id(sensor_temperature).has_state() && !isnan(id(sensor_temperature).state)) root["temperature_c"] = id(sensor_temperature).state;
+            if (id(sensor_humidity).has_state() && !isnan(id(sensor_humidity).state)) root["humidity_pct"] = id(sensor_humidity).state;
+            root["firmware_version"] = "${software_version}";
+            root["hardware_version"] = "${hardware_version}";
+          on_response:
+            then:
+              - lambda: |-
+                  if (response->status_code == 200) {
+                    id(cloud_last_sync_success) = true;
+                    id(cloud_sync_failures) = 0;
+                    id(pending_power_data) = false;
+                    id(pending_totals_data) = false;
+                  } else if (response->status_code == 401) {
+                    id(cloud_is_registered) = false;
+                    id(cloud_device_token) = "";
+                    id(cloud_sync_failures)++;
+                  } else {
+                    id(cloud_sync_failures)++;
+                  }
+              - if:
+                  condition:
+                    lambda: "return id(cloud_last_sync_success);"
+                  then:
+                    - light.turn_on:
+                        id: light_led_green
+                        flash_length: 100ms
+          on_error:
+            then:
+              - lambda: |-
+                  id(cloud_last_sync_success) = false;
+                  id(cloud_sync_failures)++;
+
+  - id: cloud_reset
+    mode: single
+    then:
+      - lambda: |-
+          id(cloud_device_id) = "";
+          id(cloud_device_token) = "";
+          id(cloud_is_registered) = false;
+          id(cloud_last_sync_success) = false;
+          id(cloud_sync_failures) = 0;
+          id(pending_power_data) = false;
+          id(pending_totals_data) = false;
+          id(power_delivered_sum) = 0.0;
+          id(power_returned_sum) = 0.0;
+          id(power_sample_count) = 0;
+      - delay: 5s
+      - script.execute: cloud_register
+
+interval:
+  - interval: 30s
+    then:
+      - if:
+          condition:
+            lambda: "return !id(cloud_is_registered) && !id(cloud_is_registering);"
+          then:
+            - script.execute: cloud_register
+
+  - interval: 10s
+    then:
+      - script.execute: cloud_collect_power_sample
+
+  - interval: ${cloud_sync_interval_power}
+    then:
+      - script.execute: cloud_sync_power
+
+  - interval: ${cloud_sync_interval_totals}
+    then:
+      - script.execute: cloud_sync_totals

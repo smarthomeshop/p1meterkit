@@ -1,0 +1,14 @@
+# P1MeterKit V1 WiFi Configuration + Cloud
+# Cloud sync is active in this firmware variant.
+
+substitutions:
+  default_network: "WiFi Cloud"
+  manifest_url: "https://smarthomeshop.github.io/p1meterkit/p1meterkit-v1-cloud-manifest.json"
+
+packages:
+  base: !include base.yaml
+  wifi: !include wifi.yaml
+  cloud: !include cloud.yaml
+
+dashboard_import:
+  package_import_url: github://smarthomeshop/p1meterkit/p1meterkit-v1/p1meterkit-cloud.yaml@main

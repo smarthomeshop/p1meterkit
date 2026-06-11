@@ -1,1 +1,7 @@
 .DS_Store
+p1meterkit-v1/p1meterkit-local.yaml
+p1meterkit-v1/p1meterkit-wifi-test-all-in-one.yaml
+p1meterkit-v1/p1meterkit-c6-mqtt-local.yaml
+p1meterkit-v1/p1meterkit-cloud-local-ip.yaml
+p1meterkit-v1/cloud-local-test.yaml
+*.mqtt-backup.yaml

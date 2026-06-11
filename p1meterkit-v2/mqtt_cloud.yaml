@@ -1,0 +1,5 @@
+# Legacy compatibility package.
+# Keep this filename for old local includes; cloud telemetry uses HTTP POST.
+
+packages:
+  cloud: !include cloud.yaml

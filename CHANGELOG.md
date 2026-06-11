@@ -6,7 +6,10 @@ This changelog starts on 2026-05-13. Earlier firmware versions existed before th
 
 ## [Unreleased]
 
-- Add customer-facing changes here before the next release is published.
+- Cloud firmware variants are now published for P1MeterKit V1, V2, and V3 with SmartHomeShop HTTP cloud registration and telemetry sync.
+- GitHub Actions now builds and publishes separate cloud binaries and Web Tools manifests for V1, V2, and V3.
+- P1MeterKit V2 keeps a legacy MQTT cloud package filename online for existing imports, while using the HTTP cloud telemetry module.
+- P1MeterKit V3 now has a cloud firmware option in addition to the local-only WiFi firmware.
 
 ## [P1MeterKit V1 1.4] - 2026-06-01
 

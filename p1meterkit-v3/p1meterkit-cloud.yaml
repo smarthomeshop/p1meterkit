@@ -1,0 +1,14 @@
+# P1MeterKit V3 Cloud Configuration
+# Includes local Home Assistant support plus SmartHomeShop cloud sync over HTTP POST.
+
+substitutions:
+  default_network: "WiFi Cloud"
+  manifest_url: "https://smarthomeshop.github.io/p1meterkit/p1meterkit-v3-cloud-manifest.json"
+
+packages:
+  base: !include base.yaml
+  cloud: !include cloud.yaml
+
+dashboard_import:
+  package_import_url: github://smarthomeshop/p1meterkit/p1meterkit-v3/p1meterkit-cloud.yaml@main
+  import_full_config: false

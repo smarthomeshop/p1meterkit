@@ -1,0 +1,14 @@
+# P1MeterKit V2 WiFi Configuration + Cloud
+# Legacy filename kept for existing imports; telemetry uses HTTP POST.
+
+substitutions:
+  default_network: "WiFi Cloud"
+  manifest_url: "https://smarthomeshop.github.io/p1meterkit/p1meterkit-v2-cloud-manifest.json"
+
+packages:
+  base: !include base.yaml
+  wifi: !include wifi.yaml
+  cloud: !include cloud.yaml
+
+dashboard_import:
+  package_import_url: github://smarthomeshop/p1meterkit/p1meterkit-v2/p1meterkit-mqtt-cloud.yaml@main

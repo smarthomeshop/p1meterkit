@@ -29,6 +29,7 @@ Hardware version V1 is based on the **ESP8266 (D1 Mini)**.
 | Variant | Description |
 |---------|-------------|
 | **p1meterkit.yaml** | Standard local WiFi firmware |
+| **p1meterkit-cloud.yaml** | WiFi firmware with SmartHomeShop cloud registration and telemetry sync |
 
 ## Installation via ESPHome Dashboard
 
@@ -58,3 +59,4 @@ For initial flashing or recovery, use our web-based flash tool:
 
 Published Web Tools manifest:
 - `https://smarthomeshop.github.io/p1meterkit/p1meterkit-v1-manifest.json`
+- `https://smarthomeshop.github.io/p1meterkit/p1meterkit-v1-cloud-manifest.json`

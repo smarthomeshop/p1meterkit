@@ -2,7 +2,7 @@
 
 ![P1MeterKit](images/p1meterkit-shop.png)
 
-P1MeterKit is a compact ESPHome-based smart meter reader for Home Assistant. It reads DSMR telegrams from the P1 port and exposes electricity, gas, and environmental data locally without cloud dependencies.
+P1MeterKit is a compact ESPHome-based smart meter reader for Home Assistant. It reads DSMR telegrams from the P1 port and exposes electricity, gas, and environmental data locally through ESPHome, with optional SmartHomeShop cloud firmware variants.
 
 Product page: https://p1meterkit.nl/en
 
@@ -18,6 +18,7 @@ P1MeterKit connects directly to the P1 port of a DSMR smart meter with an RJ12 c
 - Temperature and humidity sensing with HDC1080
 - WiFi onboarding with captive portal fallback
 - Fully local operation with Home Assistant and ESPHome
+- Optional SmartHomeShop cloud sync firmware for each hardware revision
 
 ## Hardware Versions
 
@@ -29,13 +30,16 @@ P1MeterKit connects directly to the P1 port of a DSMR smart meter with an RJ12 c
 
 ## Variants
 
-We publish one customer-facing local WiFi firmware variant per hardware revision.
+We publish local WiFi and optional SmartHomeShop cloud firmware variants per hardware revision.
 
 | Hardware | Variant | Description |
 |----------|---------|-------------|
 | V1 (ESP8266) | WiFi | Standard local WiFi firmware |
+| V1 (ESP8266) | WiFi Cloud | WiFi firmware with SmartHomeShop cloud registration and telemetry sync |
 | V2 (ESP32-C3) | WiFi | Standard local WiFi firmware with Improv BLE and Improv Serial |
+| V2 (ESP32-C3) | WiFi Cloud | WiFi firmware with SmartHomeShop cloud registration and telemetry sync |
 | V3 (ESP32-C6) | WiFi | Standard local WiFi firmware with Improv BLE and Improv Serial |
+| V3 (ESP32-C6) | WiFi Cloud | WiFi firmware with SmartHomeShop cloud registration and telemetry sync |
 
 ## Getting Started
 
@@ -70,8 +74,11 @@ p1meterkit/
 Pre-built firmware manifests are published on the `gh-pages` branch.
 
 - V1 WiFi: `p1meterkit-v1-manifest.json`
+- V1 WiFi Cloud: `p1meterkit-v1-cloud-manifest.json`
 - V2 WiFi: `p1meterkit-v2-manifest.json`
+- V2 WiFi Cloud: `p1meterkit-v2-cloud-manifest.json`
 - V3 WiFi: `p1meterkit-v3-manifest.json`
+- V3 WiFi Cloud: `p1meterkit-v3-cloud-manifest.json`
 
 ## Sensors
 

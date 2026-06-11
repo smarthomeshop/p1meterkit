@@ -7,6 +7,7 @@ substitutions:
   friendly_name: P1MeterKit
   software_version: "3.2"
   hardware_version: "V3"
+  cloud_enabled: "false"
 
   # OTA manifest URL
   manifest_url: "https://smarthomeshop.github.io/p1meterkit/p1meterkit-v3-manifest.json"
@@ -58,8 +59,10 @@ captive_portal:
 
 esp32_improv:
   authorizer: none
+  next_url: "https://app.smarthomeshop.io/setup/welcome?device={{device_name}}&ip={{ip_address}}&cloud=${cloud_enabled}&hw=${hardware_version}"
 
 improv_serial:
+  next_url: "https://app.smarthomeshop.io/setup/welcome?device={{device_name}}&ip={{ip_address}}&cloud=${cloud_enabled}&hw=${hardware_version}"
 
 ota:
   - platform: esphome
