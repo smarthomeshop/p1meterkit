@@ -7,6 +7,8 @@ This changelog starts on 2026-05-13. Earlier firmware versions existed before th
 ## [Unreleased]
 
 - Add customer-facing changes here before the next release is published.
+- Added the branded SmartHomeShop setup portal to P1MeterKit V2 and V3 WiFi and cloud firmware: connecting to the fallback hotspot now opens a SmartHomeShop setup page to pick your WiFi network, choose the local or SmartHomeShop App firmware variant, and see clear next steps for Home Assistant or the app.
+- Added a Firmware Variant selector to P1MeterKit V2 and V3 so the built-in updater can switch between the local and SmartHomeShop App (cloud) firmware manifests.
 
 ## [P1MeterKit V1 1.5] - 2026-06-11
 

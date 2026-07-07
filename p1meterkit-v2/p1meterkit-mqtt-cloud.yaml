@@ -2,13 +2,29 @@
 # Legacy filename kept for existing imports; telemetry uses HTTP POST.
 
 substitutions:
-  default_network: "WiFi Cloud"
+  default_network: "WiFi + SmartHomeShop App (cloud)"
   manifest_url: "https://smarthomeshop.github.io/p1meterkit/p1meterkit-v2-cloud-manifest.json"
+  # SmartHomeShop setup portal
+  setup_product_name: "P1MeterKit"
+  setup_product_variant: "V2 WiFi + SmartHomeShop App"
+  setup_support_cloud: "true"
+  setup_support_home_assistant: "true"
+  setup_support_mqtt: "false"
+  setup_support_homey: "true"
+  setup_support_ethernet: "false"
+  setup_support_firmware_selector: "true"
+  setup_default_cloud_enabled: "true"
+  setup_default_home_assistant_enabled: "true"
+  setup_default_mqtt_enabled: "false"
+  setup_firmware_options: "WiFi (local)|WiFi + SmartHomeShop App (cloud)"
+  setup_default_firmware_option: ${default_network}
 
 packages:
   base: !include base.yaml
   wifi: !include wifi.yaml
   cloud: !include cloud.yaml
+  setup_portal: github://smarthomeshop/setup-portal/packages/setup-portal.yaml@main
+  setup_portal_bridge: github://smarthomeshop/setup-portal/packages/firmware-selector-bridge.yaml@main
 
 dashboard_import:
   package_import_url: github://smarthomeshop/p1meterkit/p1meterkit-v2/p1meterkit-mqtt-cloud.yaml@main

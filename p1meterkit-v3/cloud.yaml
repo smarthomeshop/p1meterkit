@@ -411,7 +411,35 @@ script:
       - delay: 5s
       - script.execute: cloud_register
 
+# Cloud firmware status LED: the built-in status_led keeps blinking on the
+# ESPHome API "waiting for client connection" warning, which is the normal
+# state for cloud-only customers without Home Assistant. Replace it with
+# connectivity behaviour: blink while offline or not set up, off once online.
+status_led: !remove
+
+output:
+  - platform: gpio
+    pin: ${pin_status_led}  # same pin the removed status_led used
+    id: cloud_status_led_output
+
 interval:
+  - interval: 500ms
+    then:
+      - lambda: |-
+          static bool cloud_led_on = false;
+          if (network::is_connected()) {
+            if (cloud_led_on) {
+              id(cloud_status_led_output).turn_off();
+              cloud_led_on = false;
+            }
+          } else {
+            cloud_led_on = !cloud_led_on;
+            if (cloud_led_on) {
+              id(cloud_status_led_output).turn_on();
+            } else {
+              id(cloud_status_led_output).turn_off();
+            }
+          }
   - interval: 30s
     then:
       - if:
