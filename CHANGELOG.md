@@ -7,6 +7,7 @@ This changelog starts on 2026-05-13. Earlier firmware versions existed before th
 ## [Unreleased]
 
 - Add customer-facing changes here before the next release is published.
+- Added the P1MeterKit V3 Thread package, matching the WaterMeterKit Thread workflow. It connects locally to an existing Thread network, uses Home Assistant over IPv6, and reads DSMR data every 5 seconds to limit Thread traffic.
 
 ## [P1MeterKit V2 2.6] - 2026-07-07
 

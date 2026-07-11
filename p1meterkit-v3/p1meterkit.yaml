@@ -19,6 +19,7 @@ substitutions:
 
 packages:
   base: !include base.yaml
+  net: !include wifi.yaml
   setup_portal: github://smarthomeshop/setup-portal/packages/setup-portal.yaml@main
   setup_portal_bridge: github://smarthomeshop/setup-portal/packages/firmware-selector-bridge.yaml@main
 

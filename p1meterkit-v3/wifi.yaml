@@ -1,0 +1,45 @@
+# P1MeterKit V3 WiFi network package.
+# Split out of base.yaml so Thread firmware can reuse the same base.
+# The merged result of base.yaml + wifi.yaml matches the previous base.yaml.
+
+wifi:
+  # No WiFi credentials are embedded in the firmware.
+  # Users can onboard with:
+  # - Captive Portal via the fallback AP
+  # - Improv Serial over USB
+  # - Improv BLE
+  ap:
+    ssid: ${device_name}
+    password: ${device_name}
+
+captive_portal:
+
+esp32_improv:
+  authorizer: none
+  next_url: "https://app.smarthomeshop.io/setup/welcome?device={{device_name}}&ip={{ip_address}}&cloud=${cloud_enabled}&hw=${hardware_version}"
+
+improv_serial:
+  next_url: "https://app.smarthomeshop.io/setup/welcome?device={{device_name}}&ip={{ip_address}}&cloud=${cloud_enabled}&hw=${hardware_version}"
+
+sensor:
+  - platform: wifi_signal
+    id: sensor_wifi_signal
+    name: "${friendly_name} WiFi Signal"
+    update_interval: 300s
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      id: wifi_ip_address
+      name: "${friendly_name} IP Address"
+      icon: "mdi:network-outline"
+    ssid:
+      id: wifi_ssid
+      name: "${friendly_name} Connected SSID"
+    bssid:
+      id: wifi_bssid
+      name: "${friendly_name} Connected BSSID"
+    mac_address:
+      id: wifi_mac_address
+      name: "${friendly_name} MAC Address"
+      entity_category: diagnostic

@@ -26,7 +26,7 @@ P1MeterKit connects directly to the P1 port of a DSMR smart meter with an RJ12 c
 |---------|------|--------------|-------------|
 | V1 | ESP8266 | WiFi | Original compact P1MeterKit hardware |
 | V2 | ESP32-C3 | WiFi | Updated hardware with Improv BLE and Improv Serial provisioning |
-| V3 | ESP32-C6 | WiFi | ESP32-C6 hardware with local firmware and Improv provisioning |
+| V3 | ESP32-C6 | WiFi / Thread | ESP32-C6 hardware with local, cloud, and Thread firmware variants |
 
 ## Variants
 
@@ -40,6 +40,7 @@ We publish local WiFi and optional SmartHomeShop cloud firmware variants per har
 | V2 (ESP32-C3) | WiFi Cloud | WiFi firmware with SmartHomeShop cloud registration and telemetry sync |
 | V3 (ESP32-C6) | WiFi | Standard local WiFi firmware with Improv BLE and Improv Serial |
 | V3 (ESP32-C6) | WiFi Cloud | WiFi firmware with SmartHomeShop cloud registration and telemetry sync |
+| V3 (ESP32-C6) | Thread | Local Home Assistant firmware over the customer's existing Thread network |
 
 ## Getting Started
 
@@ -48,6 +49,10 @@ We publish local WiFi and optional SmartHomeShop cloud firmware variants per har
 3. If WiFi is not configured yet, connect to the fallback hotspot.
 4. On V2 and V3 hardware, you can also use Improv BLE or Improv Serial for provisioning.
 5. Add the discovered ESPHome device to Home Assistant.
+
+P1MeterKit V3 can also use the dedicated Thread package. Thread is local-only,
+requires an existing Thread border router, and must be flashed over USB with
+the network's Active Dataset TLVs. See the [Thread documentation](https://docs.smarthomeshop.io/en/p1meterkit/p1meterkit-thread-en).
 
 Web flasher: https://smarthomeshop.io/en/firmware
 Quick start guide: https://smarthomeshop.io/quick-start-p1meterkit
@@ -79,6 +84,9 @@ Pre-built firmware manifests are published on the `gh-pages` branch.
 - V2 WiFi Cloud: `p1meterkit-v2-cloud-manifest.json`
 - V3 WiFi: `p1meterkit-v3-manifest.json`
 - V3 WiFi Cloud: `p1meterkit-v3-cloud-manifest.json`
+
+Thread firmware is configured per installation and is published as an ESPHome
+package rather than a shared pre-built binary.
 
 ## Sensors
 
