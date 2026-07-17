@@ -1,6 +1,6 @@
 {
   "name": "P1MeterKit V1 Cloud",
-  "version": "1.6",
+  "version": "1.5",
   "home_assistant_domain": "esphome",
   "new_install_skip_erase": false,
   "builds": [
