@@ -6,6 +6,8 @@ This changelog starts on 2026-05-13. Earlier firmware versions existed before th
 
 ## [Unreleased]
 
+- Fixed cloud firmware restarting every 15 minutes when Home Assistant is not connected: the no-client reboot of the native API is now disabled on cloud firmware, so cloud-only setups run uninterrupted.
+
 - Add customer-facing changes here before the next release is published.
 
 ## [P1MeterKit V3 3.5] - 2026-07-11
@@ -19,6 +21,7 @@ This changelog starts on 2026-05-13. Earlier firmware versions existed before th
 
 - Added the branded SmartHomeShop setup portal to P1MeterKit V2 and V3 WiFi and cloud firmware: connecting to the fallback hotspot now opens a SmartHomeShop setup page to pick your WiFi network, choose the local or SmartHomeShop App firmware variant, and see clear next steps for Home Assistant or the app.
 - Added a Firmware Variant selector to P1MeterKit V2 and V3 so the built-in updater can switch between the local and SmartHomeShop App (cloud) firmware manifests.
+- Added the P1MeterKit V3 Thread package, matching the WaterMeterKit Thread workflow. It connects locally to an existing Thread network, uses Home Assistant over IPv6, and reads DSMR data every 5 seconds to limit Thread traffic.
 
 
 ## [P1MeterKit V3 3.4] - 2026-07-07
