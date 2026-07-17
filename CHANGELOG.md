@@ -6,9 +6,21 @@ This changelog starts on 2026-05-13. Earlier firmware versions existed before th
 
 ## [Unreleased]
 
+- Add customer-facing changes here before the next release is published.
+
+## [P1MeterKit V2 2.7] - 2026-07-17
+
+
 - Fixed cloud firmware restarting every 15 minutes when Home Assistant is not connected: the no-client reboot of the native API is now disabled on cloud firmware, so cloud-only setups run uninterrupted.
 
-- Add customer-facing changes here before the next release is published.
+
+
+## [P1MeterKit V3 3.6] - 2026-07-17
+
+
+- Fixed cloud firmware restarting every 15 minutes when Home Assistant is not connected: the no-client reboot of the native API is now disabled on cloud firmware, so cloud-only setups run uninterrupted.
+
+
 
 ## [P1MeterKit V3 3.5] - 2026-07-11
 
