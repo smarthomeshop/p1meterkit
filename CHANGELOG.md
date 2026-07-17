@@ -6,6 +6,8 @@ This changelog starts on 2026-05-13. Earlier firmware versions existed before th
 
 ## [Unreleased]
 
+- Added a CPU temperature diagnostic sensor, also synced to SmartHomeShop Cloud, and updated the built-in web interface to version 3.
+
 - Add customer-facing changes here before the next release is published.
 
 ## [P1MeterKit V2 2.7] - 2026-07-17
