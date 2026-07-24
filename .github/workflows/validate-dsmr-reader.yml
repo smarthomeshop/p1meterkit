@@ -1,0 +1,64 @@
+name: Validate optional DSMR Reader package
+
+on:
+  pull_request:
+    paths:
+      - "packages/dsmr-reader.yaml"
+      - "p1meterkit-v1/**"
+      - "p1meterkit-v2/**"
+      - "p1meterkit-v3/**"
+      - ".github/workflows/validate-dsmr-reader.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/dsmr-reader.yaml"
+      - "p1meterkit-v1/**"
+      - "p1meterkit-v2/**"
+      - "p1meterkit-v3/**"
+      - ".github/workflows/validate-dsmr-reader.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }} with DSMR Reader
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: P1MeterKit V1 WiFi
+            directory: p1meterkit-v1
+          - name: P1MeterKit V2 WiFi
+            directory: p1meterkit-v2
+          - name: P1MeterKit V3 WiFi
+            directory: p1meterkit-v3
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Create validation configuration
+        shell: bash
+        run: |
+          cat > "${{ matrix.directory }}/secrets.yaml" <<'EOF'
+          wifi_ssid: "DUMMY"
+          wifi_password: "DUMMYPASS"
+          EOF
+
+          cat > "${{ matrix.directory }}/dsmr-reader-validation.yaml" <<'EOF'
+          substitutions:
+            dsmr_reader_host: "http://192.168.1.10:7777"
+            dsmr_reader_api_key: "DUMMYTOKEN"
+
+          packages:
+            p1meterkit: !include p1meterkit.yaml
+            dsmr_reader: !include ../packages/dsmr-reader.yaml
+          EOF
+
+      - uses: esphome/build-action@v6
+        with:
+          yaml-file: ${{ matrix.directory }}/dsmr-reader-validation.yaml
+          version: latest

@@ -1,0 +1,70 @@
+# Optional DSMR Reader forwarding package for P1MeterKit WiFi firmware.
+#
+# Include this package after the normal P1MeterKit package and define:
+# dsmr_reader_host: "http://192.168.1.10:7777"
+# dsmr_reader_api_key: !secret dsmr_reader_api_key
+#
+# The API key is compiled into the ESPHome firmware. Keep your ESPHome YAML and
+# secrets.yaml private.
+
+http_request:
+  timeout: 10s
+  follow_redirects: false
+  verify_ssl: false
+
+text_sensor:
+  - platform: dsmr
+    telegram:
+      id: dsmr_reader_raw_telegram
+      name: "DSMR Reader Raw Telegram"
+      internal: true
+      on_value:
+        then:
+          - http_request.post:
+              url: "${dsmr_reader_host}/api/v1/datalogger/dsmrreading"
+              request_headers:
+                Authorization: "Token ${dsmr_reader_api_key}"
+                Content-Type: "application/x-www-form-urlencoded"
+              body: !lambda |-
+                std::string encoded;
+                encoded.reserve(x.size() * 3);
+                const char *hex = "0123456789ABCDEF";
+
+                for (unsigned char character : x) {
+                  const bool unreserved =
+                    (character >= 'A' && character <= 'Z') ||
+                    (character >= 'a' && character <= 'z') ||
+                    (character >= '0' && character <= '9') ||
+                    character == '-' ||
+                    character == '_' ||
+                    character == '.' ||
+                    character == '~';
+
+                  if (unreserved) {
+                    encoded.push_back(static_cast<char>(character));
+                  } else {
+                    encoded.push_back('%');
+                    encoded.push_back(hex[(character >> 4) & 0x0F]);
+                    encoded.push_back(hex[character & 0x0F]);
+                  }
+                }
+
+                return "telegram=" + encoded;
+              on_response:
+                then:
+                  - lambda: |-
+                      if (response->status_code >= 200 && response->status_code < 300) {
+                        ESP_LOGD("dsmr_reader", "DSMR Reader accepted telegram");
+                        return;
+                      }
+
+                      ESP_LOGW(
+                        "dsmr_reader",
+                        "DSMR Reader rejected telegram (HTTP %d)",
+                        response->status_code
+                      );
+              on_error:
+                then:
+                  - logger.log:
+                      level: WARN
+                      format: "DSMR Reader upload failed"

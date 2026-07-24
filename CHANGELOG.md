@@ -6,6 +6,7 @@ This changelog starts on 2026-05-13. Earlier firmware versions existed before th
 
 ## [Unreleased]
 
+- Added an optional DSMR Reader package for forwarding raw P1 telegrams over the local network from P1MeterKit V1, V2, and V3 WiFi firmware.
 - Add customer-facing changes here before the next release is published.
 
 ## [P1MeterKit V2 2.8] - 2026-07-17
