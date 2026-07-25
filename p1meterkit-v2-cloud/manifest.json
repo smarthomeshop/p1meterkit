@@ -2,7 +2,7 @@
   "chipFamily": "ESP32-C3",
   "ota": {
     "path": "p1meterkit-esp32c3.ota.bin",
-    "md5": "88d056e27396c2bf94cd3a14bbf179ce"
+    "md5": "075ccc58c17052bff64ae8681b162c18"
   },
   "parts": [
     {

@@ -8,7 +8,7 @@
       "chipFamily": "ESP8266",
       "ota": {
         "path": "p1meterkit-v1-cloud/p1meterkit-esp8266.ota.bin",
-        "md5": "4ea024752c533aa5e0582584eca1ac3a"
+        "md5": "c26d10fbaf18fb9e477f564683905836"
       },
       "parts": [
         {
