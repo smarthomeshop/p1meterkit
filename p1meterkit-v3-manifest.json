@@ -1,6 +1,6 @@
 {
   "name": "P1MeterKit V3",
-  "version": "3.7",
+  "version": "3.8",
   "home_assistant_domain": "esphome",
   "new_install_skip_erase": false,
   "builds": [
@@ -8,7 +8,7 @@
       "chipFamily": "ESP32-C6",
       "ota": {
         "path": "p1meterkit-v3/p1meterkit-esp32c6.ota.bin",
-        "md5": "c27c1105a7457103e7fad032aaf75a6c"
+        "md5": "d48d0dfbd67dc7e74b90ff60ccbc63fc"
       },
       "parts": [
         {
