@@ -1,0 +1,4 @@
+# P1MeterKit V3 factory image with post-flash on-board hardware checks.
+packages:
+  product: !include p1meterkit.yaml
+  factory_hardware_test: !include packages/factory_hardware_test.yaml

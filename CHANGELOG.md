@@ -6,6 +6,8 @@ This changelog starts on 2026-05-13. Earlier firmware versions existed before th
 
 ## [Unreleased]
 
+- Added guided post-install hardware checks for P1MeterKit V3 local and cloud
+  firmware flashed through the SmartHomeShop website.
 - Added an optional DSMR Reader package for forwarding raw P1 telegrams over the local network from P1MeterKit V1, V2, and V3 WiFi firmware.
 - Add customer-facing changes here before the next release is published.
 
