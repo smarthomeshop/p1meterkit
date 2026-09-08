@@ -6,7 +6,25 @@ This changelog starts on 2026-05-13. Earlier firmware versions existed before th
 
 ## [Unreleased]
 
+- Add customer-facing changes here before the next release is published.
+
+## [P1MeterKit V1 1.7] - 2026-09-08
+
+
 - Expanded P1MeterKit V1, V2, and V3 with the full DSMR meter diagnostics and metadata set used by WaterP1MeterKit.
+
+
+## [P1MeterKit V2 2.10] - 2026-09-08
+
+
+- Expanded P1MeterKit V1, V2, and V3 with the full DSMR meter diagnostics and metadata set used by WaterP1MeterKit.
+
+
+## [P1MeterKit V3 3.10] - 2026-09-08
+
+
+- Expanded P1MeterKit V1, V2, and V3 with the full DSMR meter diagnostics and metadata set used by WaterP1MeterKit.
+
 
 ## [P1MeterKit V1 1.6] - 2026-09-08
 
