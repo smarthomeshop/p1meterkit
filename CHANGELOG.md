@@ -6,8 +6,28 @@ This changelog starts on 2026-05-13. Earlier firmware versions existed before th
 
 ## [Unreleased]
 
+- Add customer-facing changes here before the next release is published.
+
+## [P1MeterKit V1 1.6] - 2026-09-08
+
+
 - Added support for Belgian gas readings and DSMR-connected digital water meters on P1MeterKit V1, V2, and V3.
 - Reduced P1MeterKit V3 firmware size so dashboard imports with API encryption fit the available OTA partition.
+
+
+## [P1MeterKit V2 2.9] - 2026-09-08
+
+
+- Added support for Belgian gas readings and DSMR-connected digital water meters on P1MeterKit V1, V2, and V3.
+- Reduced P1MeterKit V3 firmware size so dashboard imports with API encryption fit the available OTA partition.
+
+
+## [P1MeterKit V3 3.9] - 2026-09-08
+
+
+- Added support for Belgian gas readings and DSMR-connected digital water meters on P1MeterKit V1, V2, and V3.
+- Reduced P1MeterKit V3 firmware size so dashboard imports with API encryption fit the available OTA partition.
+
 
 ## [P1MeterKit V3 3.8] - 2026-08-04
 
