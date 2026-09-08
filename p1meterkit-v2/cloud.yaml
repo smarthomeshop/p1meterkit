@@ -352,6 +352,12 @@ script:
             if (id(dsmr_phase_power_current_l1).has_state() && !isnan(id(dsmr_phase_power_current_l1).state)) root["current_l1"] = id(dsmr_phase_power_current_l1).state;
             if (id(dsmr_phase_power_current_l2).has_state() && !isnan(id(dsmr_phase_power_current_l2).state)) root["current_l2"] = id(dsmr_phase_power_current_l2).state;
             if (id(dsmr_phase_power_current_l3).has_state() && !isnan(id(dsmr_phase_power_current_l3).state)) root["current_l3"] = id(dsmr_phase_power_current_l3).state;
+            if (id(dsmr_phase_currently_delivered_l1).has_state() && !isnan(id(dsmr_phase_currently_delivered_l1).state)) root["power_delivered_l1_kw"] = id(dsmr_phase_currently_delivered_l1).state;
+            if (id(dsmr_phase_currently_delivered_l2).has_state() && !isnan(id(dsmr_phase_currently_delivered_l2).state)) root["power_delivered_l2_kw"] = id(dsmr_phase_currently_delivered_l2).state;
+            if (id(dsmr_phase_currently_delivered_l3).has_state() && !isnan(id(dsmr_phase_currently_delivered_l3).state)) root["power_delivered_l3_kw"] = id(dsmr_phase_currently_delivered_l3).state;
+            if (id(dsmr_phase_currently_returned_l1).has_state() && !isnan(id(dsmr_phase_currently_returned_l1).state)) root["power_returned_l1_kw"] = id(dsmr_phase_currently_returned_l1).state;
+            if (id(dsmr_phase_currently_returned_l2).has_state() && !isnan(id(dsmr_phase_currently_returned_l2).state)) root["power_returned_l2_kw"] = id(dsmr_phase_currently_returned_l2).state;
+            if (id(dsmr_phase_currently_returned_l3).has_state() && !isnan(id(dsmr_phase_currently_returned_l3).state)) root["power_returned_l3_kw"] = id(dsmr_phase_currently_returned_l3).state;
 
             if (id(pending_totals_data)) {
               if (id(dsmr_electricity_delivered_1).has_state() && !isnan(id(dsmr_electricity_delivered_1).state)) root["energy_delivered_t1_kwh"] = id(dsmr_electricity_delivered_1).state;
@@ -359,9 +365,25 @@ script:
               if (id(dsmr_electricity_returned_1).has_state() && !isnan(id(dsmr_electricity_returned_1).state)) root["energy_returned_t1_kwh"] = id(dsmr_electricity_returned_1).state;
               if (id(dsmr_electricity_returned_2).has_state() && !isnan(id(dsmr_electricity_returned_2).state)) root["energy_returned_t2_kwh"] = id(dsmr_electricity_returned_2).state;
               if (id(dsmr_extra_device_delivered).has_state() && !isnan(id(dsmr_extra_device_delivered).state)) root["gas_delivered_m3"] = id(dsmr_extra_device_delivered).state;
+              if (id(dsmr_electricity_tariff).has_state()) root["electricity_tariff"] = id(dsmr_electricity_tariff).state;
+              if (id(dsmr_electricity_failures).has_state() && !isnan(id(dsmr_electricity_failures).state)) root["electricity_failures"] = (int)id(dsmr_electricity_failures).state;
+              if (id(dsmr_electricity_long_failures).has_state() && !isnan(id(dsmr_electricity_long_failures).state)) root["electricity_long_failures"] = (int)id(dsmr_electricity_long_failures).state;
+              if (id(dsmr_electricity_sags_l1).has_state() && !isnan(id(dsmr_electricity_sags_l1).state)) root["voltage_sags_l1"] = (int)id(dsmr_electricity_sags_l1).state;
+              if (id(dsmr_electricity_sags_l2).has_state() && !isnan(id(dsmr_electricity_sags_l2).state)) root["voltage_sags_l2"] = (int)id(dsmr_electricity_sags_l2).state;
+              if (id(dsmr_electricity_sags_l3).has_state() && !isnan(id(dsmr_electricity_sags_l3).state)) root["voltage_sags_l3"] = (int)id(dsmr_electricity_sags_l3).state;
+              if (id(dsmr_electricity_swells_l1).has_state() && !isnan(id(dsmr_electricity_swells_l1).state)) root["voltage_swells_l1"] = (int)id(dsmr_electricity_swells_l1).state;
+              if (id(dsmr_electricity_swells_l2).has_state() && !isnan(id(dsmr_electricity_swells_l2).state)) root["voltage_swells_l2"] = (int)id(dsmr_electricity_swells_l2).state;
+              if (id(dsmr_electricity_swells_l3).has_state() && !isnan(id(dsmr_electricity_swells_l3).state)) root["voltage_swells_l3"] = (int)id(dsmr_electricity_swells_l3).state;
+              if (id(dsmr_identification).has_state()) root["meter_identification"] = id(dsmr_identification).state;
+              if (id(dsmr_p1_version).has_state()) root["p1_version"] = id(dsmr_p1_version).state;
+              if (id(dsmr_gas_equipment_id).has_state()) root["gas_equipment_id"] = id(dsmr_gas_equipment_id).state;
               if (id(dsmr_gas_delivered_be).has_state() && !isnan(id(dsmr_gas_delivered_be).state)) root["gas_delivered_be_m3"] = id(dsmr_gas_delivered_be).state;
               if (id(dsmr_water_delivered).has_state() && !isnan(id(dsmr_water_delivered).state)) root["water_total_m3"] = id(dsmr_water_delivered).state;
               if (id(dsmr_active_energy_import_current_average_demand).has_state() && !isnan(id(dsmr_active_energy_import_current_average_demand).state)) root["current_average_demand_kw"] = id(dsmr_active_energy_import_current_average_demand).state;
+              if (id(dsmr_active_energy_import_maximum_demand_running_month).has_state() && !isnan(id(dsmr_active_energy_import_maximum_demand_running_month).state)) root["max_demand_month_kw"] = id(dsmr_active_energy_import_maximum_demand_running_month).state;
+              if (id(dsmr_active_energy_import_maximum_demand_last_13_months).has_state() && !isnan(id(dsmr_active_energy_import_maximum_demand_last_13_months).state)) root["max_demand_13_months_kw"] = id(dsmr_active_energy_import_maximum_demand_last_13_months).state;
+              if (id(dsmr_energy_delivered_lux).has_state() && !isnan(id(dsmr_energy_delivered_lux).state)) root["energy_delivered_lux_kwh"] = id(dsmr_energy_delivered_lux).state;
+              if (id(dsmr_energy_returned_lux).has_state() && !isnan(id(dsmr_energy_returned_lux).state)) root["energy_returned_lux_kwh"] = id(dsmr_energy_returned_lux).state;
             }
 
             if (id(sensor_temperature).has_state() && !isnan(id(sensor_temperature).state)) root["temperature_c"] = id(sensor_temperature).state;

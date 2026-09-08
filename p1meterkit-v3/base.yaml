@@ -261,6 +261,41 @@ sensor:
       id: dsmr_extra_device_delivered
       name: "Gas Consumed"
       state_class: total_increasing
+
+    # Electricity quality sensors
+    electricity_failures:
+      id: dsmr_electricity_failures
+      name: "Electricity Failures"
+      icon: "mdi:flash-alert"
+    electricity_long_failures:
+      id: dsmr_electricity_long_failures
+      name: "Electricity Long Failures"
+      icon: "mdi:flash-alert-outline"
+    electricity_sags_l1:
+      id: dsmr_electricity_sags_l1
+      name: "Voltage Sags Phase 1"
+      icon: "mdi:sine-wave"
+    electricity_sags_l2:
+      id: dsmr_electricity_sags_l2
+      name: "Voltage Sags Phase 2"
+      icon: "mdi:sine-wave"
+    electricity_sags_l3:
+      id: dsmr_electricity_sags_l3
+      name: "Voltage Sags Phase 3"
+      icon: "mdi:sine-wave"
+    electricity_swells_l1:
+      id: dsmr_electricity_swells_l1
+      name: "Voltage Swells Phase 1"
+      icon: "mdi:sine-wave"
+    electricity_swells_l2:
+      id: dsmr_electricity_swells_l2
+      name: "Voltage Swells Phase 2"
+      icon: "mdi:sine-wave"
+    electricity_swells_l3:
+      id: dsmr_electricity_swells_l3
+      name: "Voltage Swells Phase 3"
+      icon: "mdi:sine-wave"
+
     # Belgium and MBus specific sensors (disabled by default, enable in HA if needed)
     gas_device_type:
       id: dsmr_gas_device_type
@@ -296,17 +331,63 @@ sensor:
       id: dsmr_active_energy_import_current_average_demand
       name: "Current Average Demand"
       disabled_by_default: true
+    active_energy_import_maximum_demand_running_month:
+      id: dsmr_active_energy_import_maximum_demand_running_month
+      name: "Maximum Demand Current Month"
+      disabled_by_default: true
+    active_energy_import_maximum_demand_last_13_months:
+      id: dsmr_active_energy_import_maximum_demand_last_13_months
+      name: "Maximum Demand Last 13 Months"
+      disabled_by_default: true
+
+    # Luxembourg specific sensors (disabled by default, enable in HA if needed)
+    energy_delivered_lux:
+      id: dsmr_energy_delivered_lux
+      name: "Energy Consumed Luxembourg"
+      state_class: total_increasing
+      disabled_by_default: true
+    energy_returned_lux:
+      id: dsmr_energy_returned_lux
+      name: "Energy Produced Luxembourg"
+      state_class: total_increasing
+      disabled_by_default: true
 
 # === Text Sensors ===
 text_sensor:
   - platform: dsmr
     identification:
-      name: "${friendly_name} DSMR Identification"
+      id: dsmr_identification
+      name: "Identification"
     p1_version:
-      name: "${friendly_name} DSMR Version"
+      id: dsmr_p1_version
+      name: "Version"
+    electricity_tariff:
+      id: dsmr_electricity_tariff
+      name: "Electricity Tariff"
+      icon: "mdi:cash-multiple"
+    gas_equipment_id:
+      id: dsmr_gas_equipment_id
+      name: "Gas Equipment ID"
+      icon: "mdi:fire"
+      disabled_by_default: true
+    gas_equipment_id_be:
+      id: dsmr_gas_equipment_id_be
+      name: "DSMR Gas Equipment ID Belgium"
+      icon: "mdi:identifier"
+      disabled_by_default: true
     timestamp:
       id: dsmr_timestamp
       internal: true
+    # Belgium specific (disabled by default)
+    p1_version_be:
+      id: dsmr_p1_version_be
+      name: "Version Belgium"
+      disabled_by_default: true
+    water_equipment_id:
+      id: dsmr_water_equipment_id
+      name: "DSMR Water Equipment ID"
+      icon: "mdi:identifier"
+      disabled_by_default: true
 
   - platform: version
     id: text_sensor_version
