@@ -387,8 +387,8 @@ jobs:
           fi
 
           if [[ "$changes_made" == "true" ]] && ! git diff --quiet; then
-            git config --local user.email "action@github.com"
-            git config --local user.name "GitHub Action"
+            git config --local user.email "info@dwain.nl"
+            git config --local user.name "Dwain Scheeren"
             git add CHANGELOG.md p1meterkit-v*/base.yaml
 
             msg="chore: update versions"

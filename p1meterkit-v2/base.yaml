@@ -9,6 +9,7 @@ substitutions:
   cloud_enabled: "false"
 
   gas_mbus_id: "1"
+  water_mbus_id: "2"
 
   pin_status_led: GPIO10
   pin_led_green: GPIO1
@@ -151,6 +152,7 @@ uart:
 dsmr:
   uart_id: uart_dsmr
   gas_mbus_id: ${gas_mbus_id}
+  water_mbus_id: ${water_mbus_id}
   crc_check: false
   request_pin: ${pin_dsmr_request}
   max_telegram_length: 1700
@@ -250,6 +252,37 @@ sensor:
       id: dsmr_extra_device_delivered
       name: "Gas Consumed"
       state_class: total_increasing
+    # Belgium and MBus specific sensors (disabled by default, enable in HA if needed)
+    gas_device_type:
+      id: dsmr_gas_device_type
+      name: "DSMR Gas Device Type"
+      disabled_by_default: true
+    gas_valve_position:
+      id: dsmr_gas_valve_position
+      name: "DSMR Gas Valve Position"
+      disabled_by_default: true
+    gas_delivered_be:
+      id: dsmr_gas_delivered_be
+      name: "Gas Consumed Belgium"
+      state_class: total_increasing
+      disabled_by_default: true
+    water_device_type:
+      id: dsmr_water_device_type
+      name: "DSMR Water Device Type"
+      disabled_by_default: true
+    water_valve_position:
+      id: dsmr_water_valve_position
+      name: "DSMR Water Valve Position"
+      disabled_by_default: true
+    water_delivered:
+      id: dsmr_water_delivered
+      name: "DSMR Water Consumed"
+      device_class: water
+      state_class: total_increasing
+      unit_of_measurement: "m³"
+      accuracy_decimals: 3
+      icon: "mdi:water"
+      disabled_by_default: true
     active_energy_import_current_average_demand:
       id: dsmr_active_energy_import_current_average_demand
       name: "Current Average Demand"

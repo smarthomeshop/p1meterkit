@@ -351,6 +351,8 @@ script:
               if (id(dsmr_electricity_returned_1).has_state() && !isnan(id(dsmr_electricity_returned_1).state)) root["energy_returned_t1_kwh"] = id(dsmr_electricity_returned_1).state;
               if (id(dsmr_electricity_returned_2).has_state() && !isnan(id(dsmr_electricity_returned_2).state)) root["energy_returned_t2_kwh"] = id(dsmr_electricity_returned_2).state;
               if (id(dsmr_extra_device_delivered).has_state() && !isnan(id(dsmr_extra_device_delivered).state)) root["gas_delivered_m3"] = id(dsmr_extra_device_delivered).state;
+              if (id(dsmr_gas_delivered_be).has_state() && !isnan(id(dsmr_gas_delivered_be).state)) root["gas_delivered_be_m3"] = id(dsmr_gas_delivered_be).state;
+              if (id(dsmr_water_delivered).has_state() && !isnan(id(dsmr_water_delivered).state)) root["water_total_m3"] = id(dsmr_water_delivered).state;
               if (id(dsmr_active_energy_import_current_average_demand).has_state() && !isnan(id(dsmr_active_energy_import_current_average_demand).state)) root["current_average_demand_kw"] = id(dsmr_active_energy_import_current_average_demand).state;
             }
 
