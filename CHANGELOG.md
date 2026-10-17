@@ -6,7 +6,7 @@ This changelog starts on 2026-05-13. Earlier firmware versions existed before th
 
 ## [Unreleased]
 
-- Add customer-facing changes here before the next release is published.
+- V1 cloud firmware no longer restarts every 15 minutes when Home Assistant is not connected.
 
 ## [P1MeterKit V1 1.7] - 2026-09-08
 
