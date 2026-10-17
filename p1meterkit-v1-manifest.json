@@ -1,6 +1,6 @@
 {
   "name": "P1MeterKit V1",
-  "version": "1.7",
+  "version": "1.8",
   "home_assistant_domain": "esphome",
   "new_install_skip_erase": false,
   "builds": [
@@ -8,7 +8,7 @@
       "chipFamily": "ESP8266",
       "ota": {
         "path": "p1meterkit-v1/p1meterkit-esp8266.ota.bin",
-        "md5": "415338b6309c853bf822207ec4b68937"
+        "md5": "58e76547416cc835b429585999b93eec"
       },
       "parts": [
         {
