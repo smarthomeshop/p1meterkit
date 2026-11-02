@@ -6,7 +6,20 @@ This changelog starts on 2026-05-13. Earlier firmware versions existed before th
 
 ## [Unreleased]
 
+- Add customer-facing changes here before the next release is published.
+
+## [P1MeterKit V2 2.12] - 2026-11-02
+
+
 - P1MeterKit V2/V3: ignore damaged or empty DSMR Identification updates to prevent invalid text from interrupting the Home Assistant API connection. Preserve the last valid identification and existing entity. P1MeterKit V1 is not included in this change.
+
+
+
+## [P1MeterKit V3 3.12] - 2026-11-02
+
+
+- P1MeterKit V2/V3: ignore damaged or empty DSMR Identification updates to prevent invalid text from interrupting the Home Assistant API connection. Preserve the last valid identification and existing entity. P1MeterKit V1 is not included in this change.
+
 
 
 ## [P1MeterKit V1 1.9] - 2026-11-02
