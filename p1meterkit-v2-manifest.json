@@ -1,6 +1,6 @@
 {
   "name": "P1MeterKit V2",
-  "version": "2.11",
+  "version": "2.12",
   "home_assistant_domain": "esphome",
   "new_install_skip_erase": false,
   "builds": [
@@ -8,7 +8,7 @@
       "chipFamily": "ESP32-C3",
       "ota": {
         "path": "p1meterkit-v2/p1meterkit-esp32c3.ota.bin",
-        "md5": "c57091c2152055574b4210a4943a584c"
+        "md5": "37ca0253e22c3b3615fc23f9c87a536d"
       },
       "parts": [
         {

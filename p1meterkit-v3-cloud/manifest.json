@@ -2,7 +2,7 @@
   "chipFamily": "ESP32-C6",
   "ota": {
     "path": "p1meterkit-esp32c6.ota.bin",
-    "md5": "40e3ff86f3370d0808c75df9a695a615"
+    "md5": "ae85f59467fd9220ebd67480deaaa15a"
   },
   "parts": [
     {
