@@ -6,7 +6,8 @@ This changelog starts on 2026-05-13. Earlier firmware versions existed before th
 
 ## [Unreleased]
 
-- Add customer-facing changes here before the next release is published.
+- Increase UART receive and DSMR telegram buffers to 4096 bytes so larger Belgian Fluvius P1 telegrams can be received.
+- Support per-device native API encryption keys provisioned at runtime and retained across normal OTA updates. Existing YAML keys require a one-time migration; other native API clients need the provisioned key once encryption is active.
 
 ## [P1MeterKit V1 1.8] - 2026-10-17
 
